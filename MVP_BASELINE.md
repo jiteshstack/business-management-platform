@@ -28,8 +28,12 @@ Shanvi Enterprises
   `PRODUCTION_RUNBOOK.md` for the command).
 - Environment: local development (SQLite, Next.js dev server). Not yet deployed to any hosted
   environment - see "Deployment Status" in the final handoff report.
-- Source control: this working copy is **not currently a Git repository**. See the Source Control
-  section of `PROJECT_STATE.md` for what that means before deployment.
+- Source control: this working copy is a local-only Git repository (`main` branch, no remote).
+  Baseline tag `v1.0.0` (annotated) marks the exact commit this document describes - see the
+  Version Control section of `PROJECT_STATE.md` for the commit hash and details. `v1.0.0` is
+  frozen: do not move the tag or amend the baseline commit. Bug fixes get new commits (and,
+  eventually, a new patch tag such as `v1.0.1`); new features go into `POST_MVP_BACKLOG.md` first,
+  never straight into a commit.
 
 ## Included Modules
 

@@ -1,8 +1,20 @@
 # Project State - Business Management Platform (Energy Solutions)
 
 **Company:** Shanvi Enterprises · **Vertical:** ENERGY_SOLUTIONS
-**Last updated:** Phase 12 completion
+**Last updated:** Phase 13 completion
 **Status:** **ENERGY MVP v1.0 - FEATURE COMPLETE / FROZEN / READY FOR CONTROLLED SHANVI UAT**
+
+## Version Control
+
+- **Version:** Energy MVP v1.0
+- **Git initialized:** Phase 13 (this working copy had no version-control history before)
+- **Baseline commit:** `395521d6fcd9c28772385e997dd0c9c64568c841` ("Energy MVP v1.0 - UAT baseline")
+- **Baseline tag:** `v1.0.0` (annotated - "Energy Solutions MVP v1.0 - Ready for Shanvi UAT")
+- **Branch:** `main`
+- **Remote:** none configured - this is a local-only repository; no push, no GitHub repo, no CI/CD was set up (out of scope for this phase)
+- **Deployment:** **not deployed anywhere.** This baseline exists locally only.
+
+`v1.0.0` is the frozen UAT baseline - see the Freeze Rule in `MVP_BASELINE.md`. Bug fixes found during UAT get their own commits (and, once several accumulate or a fix is significant, a new patch tag such as `v1.0.1`); new feature requests go into `POST_MVP_BACKLOG.md`, never into this baseline.
 
 ## Phase status
 
@@ -20,6 +32,7 @@
 | 10 | Expenses + Profitability + Management Reporting | ✅ Complete |
 | 11 | (Folded into Phase 12 - no separate audit phase was run beforehand) | - |
 | 12 | MVP Freeze + Production Handoff + Shanvi UAT prep | ✅ Complete |
+| 13 | Git Initialization + Energy MVP v1.0 Baseline | ✅ Complete |
 
 Every phase was implemented, tested (Playwright + typecheck/lint/build), and left with test fixtures cleaned up. No phase was auto-advanced without an explicit new phase prompt.
 
@@ -227,6 +240,58 @@ Pharma vertical, full general-ledger/double-entry accounting, Chart of Accounts,
 
 **Deployment status:** **the application has NOT been deployed to any production or staging environment.** Everything above (build, migrations, smoke test) was run and verified locally. "Production-ready" (this document's assessment) is a distinct claim from "deployed to production" (has not happened) - see `PRODUCTION_RUNBOOK.md` before that step.
 
+## Phase 13 detail
+
+Phase 13 established version control for the first time. This working copy had no Git history
+before this phase - `git status` at the start showed "not a git repository."
+
+**Git initialization**: `git init`, default branch renamed to `main`. No remote was added, no
+GitHub repository was created, and nothing was pushed anywhere - this is a local-only repository,
+exactly as scoped.
+
+**`.gitignore` review**: the existing file (from Phase 12) was already solid. Hardened further
+with explicit `*.db` / `*.db-journal` patterns (belt-and-suspenders alongside the exact
+`/prisma/dev.db` path) so a stray database file created anywhere by mistake is still excluded, and
+confirmed `.env*` / `!.env.example`, `/storage/`, IDE metadata, logs, and build artifacts were all
+already covered.
+
+**Security pre-commit check**: before committing, every staged file was reviewed (not just
+`git add .` blindly) and cross-checked against the explicit exclusion list (`.env`, production
+secrets, API keys, DB credentials, private keys, real passwords, local DB files, generated
+secrets, sensitive logs, temp files, inappropriate IDE/OS files, `node_modules`, build artifacts).
+One real finding: the literal development password from `prisma/seed.ts` had been quoted directly
+in `PRODUCTION_RUNBOOK.md` and `PROJECT_STATE.md` during Phase 12's documentation pass, which
+violates the rule that the password may live only in `prisma/seed.ts` itself. Found by diffing
+staged content for the password string before committing; fixed by rewording both documents to
+reference "the shared password documented in `prisma/seed.ts`" instead of quoting it, then
+re-verified with the same search that only `prisma/seed.ts` still contains it. No other excluded
+category was found in the staged set - `node_modules/`, `.next/`, `prisma/dev.db`, and `.env` were
+all correctly ignored and never staged.
+
+**Application re-verification** (no functionality was changed to make the commit "clean" - this
+was a re-run of existing checks, not new fixes): `tsc --noEmit`, `npm run lint`, and `npm run
+build` all passed clean, matching Phase 12's results. No regression was found, so no code changes
+were needed for this phase beyond the two documentation edits above.
+
+**Commit and tag**: a single commit was created containing the entire reviewed working tree
+(405 files, 47999 insertions) with message `Energy MVP v1.0 - UAT baseline`, followed by an
+annotated tag `v1.0.0` ("Energy Solutions MVP v1.0 - Ready for Shanvi UAT") pointing at that
+commit. `git status` immediately after tagging showed a clean working tree with nothing to commit.
+See the Version Control section above for the exact commit hash.
+
+**Versioning policy going forward** (for whoever picks up after UAT): this is a local-only
+repository on a single `main` branch. `v1.0.0` is frozen - do not move the tag or amend the
+baseline commit. Bug fixes during UAT become their own commits (e.g. `fix: correct customer
+payment allocation`); once enough fixes accumulate, or a fix is significant enough to warrant
+re-baselining, tag a new patch version (`v1.0.1`, then `v1.0.2`, ...). A small approved
+improvement that isn't a bug fix would be `v1.1.0`. A major scope change (e.g. a second vertical,
+a rewritten costing engine) would be `v2.0.0`. New feature ideas go into `POST_MVP_BACKLOG.md`
+first, not directly into a commit.
+
+No remote was configured, no GitHub repository was created or connected, nothing was pushed, and
+no deployment/CI-CD/hosting/database/production-infrastructure change was made in this phase -
+all explicitly out of scope per the phase instructions.
+
 ## Recommended next phase
 
 There is no next development phase queued. Per the MVP freeze:
@@ -235,4 +300,9 @@ There is no next development phase queued. Per the MVP freeze:
 2. Any issue found during UAT gets classified P0-P3 (see `SHANVI_UAT_CHECKLIST.md`) and P0/P1 issues are fixed as they come up; P2 only if it blocks the pilot; P3 and new feature ideas go into `POST_MVP_BACKLOG.md`.
 3. Once the pilot is complete and Shanvi decides to expand scope, treat whatever comes next as its own phase (see `POST_MVP_BACKLOG.md` for candidates, e.g. weighted-average inventory costing or AMC renewal automation) - inspect, plan, implement, test, document, exactly as every phase before this one did.
 
-Do not begin implementation of anything new until the user names it explicitly.
+## Next Activity
+
+**Controlled Shanvi UAT** - baseline commit `395521d6fcd9c28772385e997dd0c9c64568c841`, tag
+`v1.0.0`. Do not begin implementation of anything new until the user names it explicitly, and any
+change made during UAT should land as a new commit on top of this baseline, never by editing
+history.
