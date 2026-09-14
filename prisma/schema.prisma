@@ -1,0 +1,1602 @@
+// Business Management Platform — foundation schema.
+// Vertical-agnostic "core" models only (Company, User, AuditLog).
+// Energy-specific models (Product, Quotation, Invoice, etc.) are added in later phases.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// SQLite has no native enum type, so role/businessType are plain strings
+// constrained at the application layer (see src/lib/core/roles.ts and
+// src/lib/core/business-type.ts). This also keeps the column free-form
+// enough to add a future vertical without a schema migration.
+
+model Company {
+  id                    String   @id @default(cuid())
+  name                  String
+  businessType          String   @default("ENERGY_SOLUTIONS")
+  isActive              Boolean  @default(true)
+  // Reusable default quotation terms — each quotation snapshots this text at
+  // creation time, so editing it later never changes an existing quotation.
+  defaultQuotationTerms String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  users              User[]
+  auditLogs          AuditLog[]
+  parties            Party[]
+  documents          Document[]
+  categories         Category[]
+  brands             Brand[]
+  units              Unit[]
+  locations          Location[]
+  products           Product[]
+  balances           InventoryBalance[]
+  movements          StockMovement[]
+  serials            SerialNumber[]
+  numberSequences    NumberSequence[]
+  quotations         Quotation[]
+  salesOrders        SalesOrder[]
+  invoices           Invoice[]
+  payments           Payment[]
+  paymentReminders   PaymentReminder[]
+  purchaseOrders     PurchaseOrder[]
+  purchaseReceipts   PurchaseReceipt[]
+  vendorInvoices     VendorInvoice[]
+  vendorPayments     VendorPayment[]
+  energyProjects     EnergyProject[]
+  projectSites       ProjectSite[]
+  installations      Installation[]
+  installedEquipment InstalledEquipment[]
+  warranties         Warranty[]
+  amcs               AMC[]
+  serviceRequests    ServiceRequest[]
+  maintenanceVisits  MaintenanceVisit[]
+  expenseCategories  ExpenseCategory[]
+  expenses           Expense[]
+}
+
+model User {
+  id           String    @id @default(cuid())
+  companyId    String
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         String    @default("OWNER_ADMIN")
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  company                 Company            @relation(fields: [companyId], references: [id])
+  auditLogs               AuditLog[]
+  partyNotes              PartyNote[]
+  uploadedDocs            Document[]
+  stockMovements          StockMovement[]
+  quotations              Quotation[]
+  salesOrders             SalesOrder[]
+  invoices                Invoice[]
+  managedProjects         EnergyProject[]    @relation("ProjectManager")
+  technicianInstallations Installation[]     @relation("InstallationTechnician")
+  assignedServiceRequests ServiceRequest[]   @relation("ServiceAssignee")
+  maintenanceVisits       MaintenanceVisit[] @relation("MaintenanceTechnician")
+
+  @@index([companyId])
+}
+
+// Shared record for both Clients and Vendors — kept as one table (with a
+// `type` discriminator) rather than two, since the two are otherwise
+// identical in shape; see src/lib/core/parties for the reusable logic built
+// on top of it. Not vertical-specific — a future Pharma vertical reuses this
+// same model.
+model Party {
+  id           String   @id @default(cuid())
+  companyId    String
+  type         String // "CLIENT" | "VENDOR"
+  name         String
+  businessName String?
+  category     String?
+  mobile       String?
+  email        String?
+  gstin        String?
+  pan          String?
+  city         String?
+  state        String?
+  paymentTerms String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  company               Company              @relation(fields: [companyId], references: [id])
+  contacts              PartyContact[]
+  addresses             PartyAddress[]
+  notes                 PartyNote[]
+  defaultVendorProducts Product[]            @relation("ProductDefaultVendor")
+  quotations            Quotation[]
+  salesOrders           SalesOrder[]
+  invoices              Invoice[]
+  payments              Payment[]
+  paymentReminders      PaymentReminder[]
+  purchaseOrders        PurchaseOrder[]
+  purchaseReceipts      PurchaseReceipt[]
+  vendorInvoices        VendorInvoice[]
+  vendorPayments        VendorPayment[]
+  energyProjects        EnergyProject[]
+  projectSites          ProjectSite[]
+  installedEquipment    InstalledEquipment[]
+  warranties            Warranty[]
+  amcs                  AMC[]
+  serviceRequests       ServiceRequest[]
+  maintenanceVisits     MaintenanceVisit[]
+  expenses              Expense[]
+
+  @@index([companyId, type])
+  @@index([companyId, type, name])
+}
+
+model PartyContact {
+  id          String   @id @default(cuid())
+  partyId     String
+  name        String
+  designation String?
+  phone       String?
+  email       String?
+  isPrimary   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  party Party @relation(fields: [partyId], references: [id], onDelete: Cascade)
+
+  @@index([partyId])
+}
+
+model PartyAddress {
+  id        String   @id @default(cuid())
+  partyId   String
+  type      String // "BILLING" | "SITE"
+  label     String?
+  line1     String
+  line2     String?
+  city      String?
+  state     String?
+  pincode   String?
+  country   String   @default("India")
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  party       Party        @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  quotations  Quotation[]
+  salesOrders SalesOrder[]
+
+  @@index([partyId])
+}
+
+model PartyNote {
+  id        String   @id @default(cuid())
+  partyId   String
+  authorId  String?
+  body      String
+  createdAt DateTime @default(now())
+
+  party  Party @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  author User? @relation(fields: [authorId], references: [id])
+
+  @@index([partyId, createdAt])
+}
+
+// Generic attachment table — entityType/entityId is intentionally not a
+// formal Prisma relation (no FK) since it will point at different tables
+// (parties now, quotations/invoices/etc. later); each caller filters by its
+// own entityType so no cross-tenant or cross-entity leakage is possible.
+model Document {
+  id         String   @id @default(cuid())
+  companyId  String
+  entityType String // "PARTY" for now
+  entityId   String
+  fileName   String
+  fileUrl    String
+  fileType   String?
+  fileSize   Int?
+  uploadedBy String?
+  createdAt  DateTime @default(now())
+
+  company  Company @relation(fields: [companyId], references: [id])
+  uploader User?   @relation(fields: [uploadedBy], references: [id])
+
+  @@index([companyId, entityType, entityId])
+}
+
+// ---- Phase 3: Products & Inventory ----
+// Vertical-specific (Energy Solutions) — see src/lib/energy/inventory. A
+// future Pharma vertical would model products very differently, so this
+// intentionally does not live under the vertical-agnostic "core" models
+// above (Company/User/Party/Document).
+
+model Category {
+  id        String   @id @default(cuid())
+  companyId String
+  name      String
+  group     String? // e.g. "SOLAR" | "GENERATOR" | "POWER_BACKUP" | "SERVICES" — free text, not enforced
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company  Company   @relation(fields: [companyId], references: [id])
+  products Product[]
+
+  @@unique([companyId, name])
+  @@index([companyId])
+}
+
+model Brand {
+  id        String   @id @default(cuid())
+  companyId String
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company  Company   @relation(fields: [companyId], references: [id])
+  products Product[]
+
+  @@unique([companyId, name])
+  @@index([companyId])
+}
+
+model Unit {
+  id           String   @id @default(cuid())
+  companyId    String
+  name         String
+  abbreviation String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  company  Company   @relation(fields: [companyId], references: [id])
+  products Product[]
+
+  @@unique([companyId, name])
+  @@index([companyId])
+}
+
+// One default location is seeded per company; the schema allows more so a
+// future phase can add real multi-warehouse support without a migration.
+model Location {
+  id        String   @id @default(cuid())
+  companyId String
+  name      String
+  isDefault Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company           Company            @relation(fields: [companyId], references: [id])
+  balances          InventoryBalance[]
+  movements         StockMovement[]
+  serials           SerialNumber[]
+  purchaseReceipts  PurchaseReceipt[]
+  servicePartUsages ServicePartUsage[]
+
+  @@unique([companyId, name])
+  @@index([companyId])
+}
+
+model Product {
+  id              String   @id @default(cuid())
+  companyId       String
+  code            String
+  name            String
+  type            String // "EQUIPMENT" | "MATERIAL" | "SERVICE"
+  categoryId      String?
+  brandId         String?
+  model           String?
+  description     String?
+  specifications  String?
+  unitId          String?
+  purchasePrice   Float?
+  sellingPrice    Float?
+  taxRate         Float?
+  defaultVendorId String?
+  warrantyMonths  Int?
+  serialTracked   Boolean  @default(false)
+  stockTracked    Boolean  @default(true)
+  reorderLevel    Float?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  company                  Company                   @relation(fields: [companyId], references: [id])
+  category                 Category?                 @relation(fields: [categoryId], references: [id])
+  brand                    Brand?                    @relation(fields: [brandId], references: [id])
+  unit                     Unit?                     @relation(fields: [unitId], references: [id])
+  defaultVendor            Party?                    @relation("ProductDefaultVendor", fields: [defaultVendorId], references: [id])
+  balances                 InventoryBalance[]
+  movements                StockMovement[]
+  serials                  SerialNumber[]
+  quotationLineItems       QuotationLineItem[]
+  salesOrderLineItems      SalesOrderLineItem[]
+  invoiceLineItems         InvoiceLineItem[]
+  purchaseOrderLineItems   PurchaseOrderLineItem[]
+  purchaseReceiptLineItems PurchaseReceiptLineItem[]
+  vendorInvoiceLineItems   VendorInvoiceLineItem[]
+  projectItems             ProjectItem[]
+  installationItems        InstallationItem[]
+  installedEquipment       InstalledEquipment[]
+  servicePartUsages        ServicePartUsage[]
+
+  @@unique([companyId, code])
+  @@index([companyId, type])
+  @@index([companyId, name])
+}
+
+// Source-of-truth stock counters per product+location. Never edited
+// directly — always through a StockMovement so history is never lost.
+model InventoryBalance {
+  id          String   @id @default(cuid())
+  companyId   String
+  productId   String
+  locationId  String
+  totalQty    Float    @default(0)
+  reservedQty Float    @default(0)
+  damagedQty  Float    @default(0)
+  updatedAt   DateTime @updatedAt
+
+  company  Company  @relation(fields: [companyId], references: [id])
+  product  Product  @relation(fields: [productId], references: [id])
+  location Location @relation(fields: [locationId], references: [id])
+
+  @@unique([productId, locationId])
+  @@index([companyId])
+}
+
+// Append-only ledger of every stock change. previous*/new* columns snapshot
+// the balance at the time of the movement so the history is self-contained
+// and auditable even if later movements change the running total.
+model StockMovement {
+  id         String  @id @default(cuid())
+  companyId  String
+  productId  String
+  locationId String
+  type       String
+  // "STOCK_IN" | "STOCK_OUT" | "RESERVE" | "RESERVE_RELEASE" |
+  // "ADJUST_INCREASE" | "ADJUST_DECREASE" | "DAMAGE" | "RETURN" | "OPENING_STOCK"
+  quantity   Float
+  reference  String?
+  reason     String?
+  notes      String?
+  userId     String?
+
+  previousTotalQty    Float
+  newTotalQty         Float
+  previousReservedQty Float
+  newReservedQty      Float
+  previousDamagedQty  Float
+  newDamagedQty       Float
+
+  serialNumbersJson String? // optional JSON array of serial numbers involved, for display only
+
+  createdAt DateTime @default(now())
+
+  company  Company  @relation(fields: [companyId], references: [id])
+  product  Product  @relation(fields: [productId], references: [id])
+  location Location @relation(fields: [locationId], references: [id])
+  user     User?    @relation(fields: [userId], references: [id])
+
+  @@index([companyId, productId, createdAt])
+  @@index([companyId, createdAt])
+}
+
+model SerialNumber {
+  id                String   @id @default(cuid())
+  companyId         String
+  productId         String
+  serialNumber      String
+  status            String   @default("IN_STOCK")
+  // "IN_STOCK" | "RESERVED" | "ASSIGNED" | "INSTALLED" | "DAMAGED" |
+  // "RETURNED" | "UNDER_SERVICE" | "RETIRED"
+  locationId        String?
+  purchaseReference String?
+  notes             String?
+  // Set when a serial is earmarked for/installed at a project — the
+  // ASSIGNED/INSTALLED statuses above already existed from Phase 3 in
+  // anticipation of this; this just adds the "for which project" reference.
+  projectId         String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  company            Company             @relation(fields: [companyId], references: [id])
+  product            Product             @relation(fields: [productId], references: [id])
+  location           Location?           @relation(fields: [locationId], references: [id])
+  project            EnergyProject?      @relation(fields: [projectId], references: [id])
+  installedEquipment InstalledEquipment?
+
+  @@unique([companyId, productId, serialNumber])
+  @@index([companyId, productId])
+  @@index([companyId, status])
+  @@index([companyId, projectId])
+}
+
+// ---- Phase 4: Energy Quotations ----
+// Vertical-specific (Energy Solutions) — see src/lib/energy/quotations.
+
+// Generic document-numbering counter — reusable by any future series
+// (SO-, EINV-, VPO-, …), not just quotations.
+model NumberSequence {
+  id           String @id @default(cuid())
+  companyId    String
+  series       String // e.g. "QTN"
+  currentValue Int    @default(0)
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@unique([companyId, series])
+}
+
+model Quotation {
+  id               String  @id @default(cuid())
+  companyId        String
+  quotationNumber  String // shared across all revisions of one logical quotation, e.g. "QTN-0001"
+  revisionNumber   Int     @default(0)
+  rootQuotationId  String? // self-relation: null on the original; points to the original on every revision
+  isLatestRevision Boolean @default(true)
+
+  clientId        String
+  siteAddressId   String?
+  siteAddressText String? // snapshot — stays readable even if the address is later edited/deleted
+
+  type   String // ON_GRID_SOLAR | OFF_GRID_SOLAR | HYBRID_SOLAR | DIESEL_GENERATOR | BATTERY_INVERTER | EQUIPMENT_SUPPLY | INSTALLATION_SERVICE | AMC_MAINTENANCE | CUSTOM
+  status String @default("DRAFT")
+  // DRAFT | SENT | NEGOTIATION | APPROVED | REJECTED | EXPIRED | CANCELLED
+
+  quotationDate DateTime  @default(now())
+  validUntil    DateTime?
+  salespersonId String?
+  reference     String?
+  subject       String?
+  notes         String?
+
+  // Optional, quotation-type-specific technical configuration (on/off-grid
+  // solar, hybrid, DG). Kept as one JSON blob rather than dozens of nullable
+  // columns — this is deliberately not an engineering calculator, just a
+  // free-form spec sheet attached to the quote.
+  technicalConfigJson String?
+
+  paymentTerms         String?
+  equipmentWarranty    String?
+  installationWarranty String?
+  deliveryTimeline     String?
+  installationTimeline String?
+  termsAndConditions   String? // snapshot of Company.defaultQuotationTerms at creation time
+
+  subtotal        Float  @default(0)
+  discountPercent Float?
+  discountAmount  Float  @default(0)
+  taxableAmount   Float  @default(0)
+  taxAmount       Float  @default(0)
+  otherCharges    Float  @default(0)
+  grandTotal      Float  @default(0)
+
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company       Company             @relation(fields: [companyId], references: [id])
+  client        Party               @relation(fields: [clientId], references: [id])
+  siteAddress   PartyAddress?       @relation(fields: [siteAddressId], references: [id], onDelete: SetNull)
+  salesperson   User?               @relation(fields: [salespersonId], references: [id])
+  items         QuotationLineItem[]
+  rootQuotation Quotation?          @relation("QuotationRevisions", fields: [rootQuotationId], references: [id])
+  revisions     Quotation[]         @relation("QuotationRevisions")
+  salesOrders   SalesOrder[]
+  invoices      Invoice[]
+
+  @@unique([companyId, quotationNumber, revisionNumber])
+  @@index([companyId, status])
+  @@index([companyId, clientId])
+  @@index([companyId, quotationNumber])
+}
+
+model QuotationLineItem {
+  id          String  @id @default(cuid())
+  quotationId String
+  productId   String?
+  // Snapshots so a later product edit/deactivation never rewrites history.
+  productName String
+  productCode String?
+  unitLabel   String?
+
+  description     String?
+  quantity        Float
+  unitPrice       Float
+  discountPercent Float?
+  discountAmount  Float   @default(0)
+  taxRate         Float?
+  taxAmount       Float   @default(0)
+  lineSubtotal    Float
+  lineTotal       Float
+  sortOrder       Int     @default(0)
+
+  quotation Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  product   Product?  @relation(fields: [productId], references: [id])
+
+  @@index([quotationId])
+}
+
+// ---- Phase 5: Sales Orders + Energy Invoicing ----
+// Vertical-specific (Energy Solutions) — see src/lib/energy/sales-orders and
+// src/lib/energy/invoices. Reuses Quotation's shape (snapshotted line items,
+// server-computed totals) rather than inventing a new pattern.
+
+model SalesOrder {
+  id        String @id @default(cuid())
+  companyId String
+  soNumber  String
+  status    String @default("DRAFT")
+  // DRAFT | CONFIRMED | PARTIALLY_FULFILLED | COMPLETED | CANCELLED
+
+  clientId        String
+  siteAddressId   String?
+  siteAddressText String?
+  quotationId     String? // optional — a Sales Order may be created directly
+
+  orderDate            DateTime  @default(now())
+  expectedDeliveryDate DateTime?
+  salespersonId        String?
+  paymentTerms         String?
+  notes                String?
+
+  subtotal        Float  @default(0)
+  discountPercent Float?
+  discountAmount  Float  @default(0)
+  taxableAmount   Float  @default(0)
+  taxAmount       Float  @default(0)
+  otherCharges    Float  @default(0)
+  grandTotal      Float  @default(0)
+
+  // Whether Confirm already booked RESERVE stock movements — lets Cancel
+  // know whether there is anything to release, without re-deriving it from
+  // movement history every time.
+  stockReserved Boolean @default(false)
+
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company     Company              @relation(fields: [companyId], references: [id])
+  client      Party                @relation(fields: [clientId], references: [id])
+  siteAddress PartyAddress?        @relation(fields: [siteAddressId], references: [id], onDelete: SetNull)
+  quotation   Quotation?           @relation(fields: [quotationId], references: [id])
+  salesperson User?                @relation(fields: [salespersonId], references: [id])
+  items       SalesOrderLineItem[]
+  invoices    Invoice[]
+  projects    EnergyProject[]
+
+  @@unique([companyId, soNumber])
+  @@index([companyId, status])
+  @@index([companyId, clientId])
+}
+
+model SalesOrderLineItem {
+  id           String  @id @default(cuid())
+  salesOrderId String
+  productId    String?
+  // Snapshots so a later product edit/deactivation never rewrites history.
+  productName  String
+  productCode  String?
+  unitLabel    String?
+
+  description     String?
+  quantity        Float
+  unitPrice       Float
+  discountPercent Float?
+  discountAmount  Float   @default(0)
+  taxRate         Float?
+  taxAmount       Float   @default(0)
+  lineSubtotal    Float
+  lineTotal       Float
+  sortOrder       Int     @default(0)
+
+  salesOrder SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  product    Product?   @relation(fields: [productId], references: [id])
+
+  @@index([salesOrderId])
+}
+
+model Invoice {
+  id            String @id @default(cuid())
+  companyId     String
+  invoiceNumber String
+  status        String @default("DRAFT")
+  // DRAFT | ISSUED | PARTIALLY_PAID | PAID | OVERDUE | CANCELLED — the last
+  // three are only ever set by a future Payments phase; nothing in this
+  // phase can produce them (paidAmount always starts and stays at 0 here).
+
+  clientId           String
+  billingAddressText String? // snapshot of the client's billing address at issue time
+  siteAddressText    String? // snapshot of the site address, if any
+
+  salesOrderId String?
+  quotationId  String?
+  // Set only when this invoice bills a chargeable Service Request, or is
+  // linked to an AMC contract for periodic billing — reuses the existing
+  // Invoice/Receivables/Ledger machinery rather than a second financial
+  // system (see src/lib/energy/service-requests/actions.ts).
+  amcId        String?
+
+  invoiceDate   DateTime  @default(now())
+  dueDate       DateTime?
+  paymentTerms  String?
+  notes         String?
+  salespersonId String?
+
+  subtotal        Float  @default(0)
+  discountPercent Float?
+  discountAmount  Float  @default(0)
+  taxableAmount   Float  @default(0)
+  taxAmount       Float  @default(0)
+  otherCharges    Float  @default(0)
+  grandTotal      Float  @default(0)
+
+  // Paid/outstanding foundation for Phase 6 — Paid stays 0 here; nothing in
+  // this phase writes to it. Outstanding is kept as a stored column (not
+  // computed on read) so a future payment action can update it in the same
+  // transaction as the payment record, the same pattern InventoryBalance
+  // already uses for stock.
+  paidAmount        Float @default(0)
+  outstandingAmount Float @default(0)
+
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company         Company             @relation(fields: [companyId], references: [id])
+  client          Party               @relation(fields: [clientId], references: [id])
+  salesOrder      SalesOrder?         @relation(fields: [salesOrderId], references: [id])
+  quotation       Quotation?          @relation(fields: [quotationId], references: [id])
+  amc             AMC?                @relation(fields: [amcId], references: [id])
+  salesperson     User?               @relation(fields: [salespersonId], references: [id])
+  items           InvoiceLineItem[]
+  allocations     PaymentAllocation[]
+  reminders       PaymentReminder[]
+  serviceRequests ServiceRequest[]
+
+  @@unique([companyId, invoiceNumber])
+  @@index([companyId, status])
+  @@index([companyId, clientId])
+  @@index([companyId, dueDate])
+}
+
+model InvoiceLineItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  productId   String?
+  productName String
+  productCode String?
+  unitLabel   String?
+
+  description     String?
+  quantity        Float
+  unitPrice       Float
+  discountPercent Float?
+  discountAmount  Float   @default(0)
+  taxRate         Float?
+  taxAmount       Float   @default(0)
+  lineSubtotal    Float
+  lineTotal       Float
+  sortOrder       Int     @default(0)
+
+  invoice Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id])
+
+  @@index([invoiceId])
+}
+
+// ---- Phase 6: Payments + Receivables + Customer Ledger + Reminders ----
+// Vertical-agnostic enough to reuse as-is for a future Vendor Payments phase,
+// but scoped to customer collections only for now — see
+// src/lib/energy/payments and src/lib/energy/reminders.
+
+// A single money-in event from a client. May be created with no allocation
+// at all (an advance / unallocated payment) and allocated to one or more
+// invoices later — allocatedAmount/unallocatedAmount/status are always
+// recomputed from the PaymentAllocation rows (the source of truth), never
+// edited directly. See src/lib/energy/payments/ledger.ts.
+model Payment {
+  id            String @id @default(cuid())
+  companyId     String
+  paymentNumber String
+  status        String @default("UNALLOCATED")
+  // UNALLOCATED | PARTIALLY_ALLOCATED | ALLOCATED | CANCELLED
+
+  clientId String
+  amount   Float
+
+  // Cached, always recomputed from PaymentAllocation rows belonging to this
+  // payment — never written to directly outside src/lib/energy/payments/ledger.ts.
+  allocatedAmount   Float @default(0)
+  unallocatedAmount Float @default(0)
+
+  paymentDate     DateTime  @default(now())
+  mode            String // CASH | BANK_TRANSFER | UPI | CHEQUE | OTHER
+  referenceNumber String?
+  chequeNumber    String?
+  chequeDate      DateTime?
+  bankName        String?
+  notes           String?
+
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company     Company             @relation(fields: [companyId], references: [id])
+  client      Party               @relation(fields: [clientId], references: [id])
+  allocations PaymentAllocation[]
+
+  @@unique([companyId, paymentNumber])
+  @@index([companyId, status])
+  @@index([companyId, clientId])
+}
+
+// One payment can fund many invoices, and (across separate payments) one
+// invoice can be funded by many payments. Rows are never deleted, even after
+// the parent payment is cancelled — they stay as the audit trail; a
+// cancelled payment's allocations are simply excluded when
+// recomputing an invoice's paid/outstanding amount (see ledger.ts).
+model PaymentAllocation {
+  id        String   @id @default(cuid())
+  paymentId String
+  invoiceId String
+  amount    Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+
+  @@unique([paymentId, invoiceId])
+  @@index([paymentId])
+  @@index([invoiceId])
+}
+
+// A manually-logged follow-up record against an outstanding invoice. The
+// "candidate" reminders shown in the Payment Reminders UI (upcoming / due
+// today / overdue / partial) are computed live from Invoice data, not
+// stored — a row here only exists once a user actually logs a follow-up
+// ("mark sent" / add a note), so this is a tracking log, not the source of
+// the receivable data itself.
+model PaymentReminder {
+  id        String @id @default(cuid())
+  companyId String
+  clientId  String
+  invoiceId String
+
+  type   String // UPCOMING | DUE_TODAY | OVERDUE | PARTIAL_PAYMENT
+  status String @default("PENDING") // PENDING | SENT
+
+  outstandingAtReminder Float
+  dueDateAtReminder     DateTime?
+  reminderDate          DateTime  @default(now())
+  nextFollowUpDate      DateTime?
+  notes                 String?
+
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id])
+  client  Party   @relation(fields: [clientId], references: [id])
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+
+  @@index([companyId, status])
+  @@index([companyId, clientId])
+  @@index([invoiceId])
+}
+
+// ---- Phase 7: Purchasing + Vendor Payables + Vendor Ledger ----
+// Mirrors the Quotation → SalesOrder → Invoice → Payment shape from
+// Phases 4-6 on the vendor side, deliberately as separate concrete models
+// (not a shared/polymorphic Payment or Invoice table) — Payment/Invoice are
+// customer-side by design (Payment.clientId, PaymentAllocation→Invoice are
+// hard FKs), and this codebase's established pattern for financial documents
+// is concrete typed models with real constraints, not a shared "documents"
+// table. The *code patterns* (ledger.ts recompute-from-source-of-truth,
+// allocation validation, numbering, statuses) are reused, not the tables.
+
+model PurchaseOrder {
+  id        String @id @default(cuid())
+  companyId String
+  poNumber  String
+  status    String @default("DRAFT")
+  // DRAFT | SENT | CONFIRMED | PARTIALLY_RECEIVED | FULLY_RECEIVED | CANCELLED | CLOSED
+  // PARTIALLY_RECEIVED/FULLY_RECEIVED are only ever set by the receiving
+  // action (never a manual "Mark as" button) — see purchase-orders/ledger.ts.
+
+  vendorId             String
+  poDate               DateTime  @default(now())
+  expectedDeliveryDate DateTime?
+  referenceNumber      String?
+  notes                String?
+  termsAndConditions   String?
+
+  subtotal        Float  @default(0)
+  discountPercent Float?
+  discountAmount  Float  @default(0)
+  taxableAmount   Float  @default(0)
+  taxAmount       Float  @default(0)
+  otherCharges    Float  @default(0)
+  grandTotal      Float  @default(0)
+
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company        Company                 @relation(fields: [companyId], references: [id])
+  vendor         Party                   @relation(fields: [vendorId], references: [id])
+  items          PurchaseOrderLineItem[]
+  receipts       PurchaseReceipt[]
+  vendorInvoices VendorInvoice[]
+
+  @@unique([companyId, poNumber])
+  @@index([companyId, status])
+  @@index([companyId, vendorId])
+}
+
+model PurchaseOrderLineItem {
+  id              String  @id @default(cuid())
+  purchaseOrderId String
+  productId       String?
+  // Snapshots so a later product edit/deactivation never rewrites history.
+  productName     String
+  productCode     String?
+  unitLabel       String?
+
+  description     String?
+  quantity        Float
+  unitPrice       Float
+  discountPercent Float?
+  discountAmount  Float   @default(0)
+  taxRate         Float?
+  taxAmount       Float   @default(0)
+  lineSubtotal    Float
+  lineTotal       Float
+  sortOrder       Int     @default(0)
+
+  // Cached, always recomputed from PurchaseReceiptLineItem rows belonging to
+  // this line — never written to directly outside
+  // purchase-orders/ledger.ts. Pending = quantity - receivedQuantity.
+  receivedQuantity Float @default(0)
+
+  purchaseOrder PurchaseOrder             @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  product       Product?                  @relation(fields: [productId], references: [id])
+  receiptItems  PurchaseReceiptLineItem[]
+
+  @@index([purchaseOrderId])
+}
+
+// One receiving event against a PO — a PO can have many (partial receipts).
+model PurchaseReceipt {
+  id              String   @id @default(cuid())
+  companyId       String
+  receiptNumber   String
+  purchaseOrderId String
+  vendorId        String
+  locationId      String
+  receiptDate     DateTime @default(now())
+  notes           String?
+
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company        Company                   @relation(fields: [companyId], references: [id])
+  purchaseOrder  PurchaseOrder             @relation(fields: [purchaseOrderId], references: [id])
+  vendor         Party                     @relation(fields: [vendorId], references: [id])
+  location       Location                  @relation(fields: [locationId], references: [id])
+  items          PurchaseReceiptLineItem[]
+  vendorInvoices VendorInvoice[]
+
+  @@unique([companyId, receiptNumber])
+  @@index([companyId, purchaseOrderId])
+}
+
+model PurchaseReceiptLineItem {
+  id                      String  @id @default(cuid())
+  purchaseReceiptId       String
+  purchaseOrderLineItemId String
+  productId               String?
+  productName             String
+  quantity                Float
+  sortOrder               Int     @default(0)
+
+  purchaseReceipt       PurchaseReceipt       @relation(fields: [purchaseReceiptId], references: [id], onDelete: Cascade)
+  purchaseOrderLineItem PurchaseOrderLineItem @relation(fields: [purchaseOrderLineItemId], references: [id])
+  product               Product?              @relation(fields: [productId], references: [id])
+
+  @@index([purchaseReceiptId])
+  @@index([purchaseOrderLineItemId])
+}
+
+model VendorInvoice {
+  id            String @id @default(cuid())
+  companyId     String
+  invoiceNumber String // internal number, e.g. VINV-0001
+  status        String @default("DRAFT")
+  // DRAFT | UNPAID | PARTIALLY_PAID | PAID | CANCELLED — mirrors customer
+  // Invoice's DRAFT/ISSUED/PARTIALLY_PAID/PAID/CANCELLED pattern with
+  // ISSUED renamed UNPAID; "Overdue" is a computed badge, never stored,
+  // exactly like the customer Invoice (see vendor-invoices/status-badge.tsx).
+
+  vendorId            String
+  vendorInvoiceNumber String? // the vendor's own bill/reference number
+  purchaseOrderId     String?
+  purchaseReceiptId   String?
+
+  invoiceDate DateTime  @default(now())
+  dueDate     DateTime?
+  notes       String?
+
+  subtotal        Float  @default(0)
+  discountPercent Float?
+  discountAmount  Float  @default(0)
+  taxableAmount   Float  @default(0)
+  taxAmount       Float  @default(0)
+  otherCharges    Float  @default(0)
+  grandTotal      Float  @default(0)
+
+  // Always recomputed from VendorPaymentAllocation rows — see
+  // vendor-payments/ledger.ts. Never written to directly.
+  paidAmount        Float @default(0)
+  outstandingAmount Float @default(0)
+
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company         Company                   @relation(fields: [companyId], references: [id])
+  vendor          Party                     @relation(fields: [vendorId], references: [id])
+  purchaseOrder   PurchaseOrder?            @relation(fields: [purchaseOrderId], references: [id])
+  purchaseReceipt PurchaseReceipt?          @relation(fields: [purchaseReceiptId], references: [id])
+  items           VendorInvoiceLineItem[]
+  allocations     VendorPaymentAllocation[]
+
+  @@unique([companyId, invoiceNumber])
+  @@index([companyId, status])
+  @@index([companyId, vendorId])
+  @@index([companyId, dueDate])
+}
+
+model VendorInvoiceLineItem {
+  id              String  @id @default(cuid())
+  vendorInvoiceId String
+  productId       String?
+  productName     String
+  productCode     String?
+  unitLabel       String?
+
+  description     String?
+  quantity        Float
+  unitPrice       Float
+  discountPercent Float?
+  discountAmount  Float   @default(0)
+  taxRate         Float?
+  taxAmount       Float   @default(0)
+  lineSubtotal    Float
+  lineTotal       Float
+  sortOrder       Int     @default(0)
+
+  vendorInvoice VendorInvoice @relation(fields: [vendorInvoiceId], references: [id], onDelete: Cascade)
+  product       Product?      @relation(fields: [productId], references: [id])
+
+  @@index([vendorInvoiceId])
+}
+
+model VendorPayment {
+  id            String @id @default(cuid())
+  companyId     String
+  paymentNumber String
+  status        String @default("UNALLOCATED")
+  // UNALLOCATED | PARTIALLY_ALLOCATED | ALLOCATED | CANCELLED
+
+  vendorId String
+  amount   Float
+
+  // Cached, always recomputed from VendorPaymentAllocation rows belonging to
+  // this payment — never written to directly outside vendor-payments/ledger.ts.
+  allocatedAmount   Float @default(0)
+  unallocatedAmount Float @default(0)
+
+  paymentDate     DateTime  @default(now())
+  mode            String // CASH | BANK_TRANSFER | UPI | CHEQUE | OTHER
+  referenceNumber String?
+  chequeNumber    String?
+  chequeDate      DateTime?
+  bankName        String?
+  notes           String?
+
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company     Company                   @relation(fields: [companyId], references: [id])
+  vendor      Party                     @relation(fields: [vendorId], references: [id])
+  allocations VendorPaymentAllocation[]
+
+  @@unique([companyId, paymentNumber])
+  @@index([companyId, status])
+  @@index([companyId, vendorId])
+}
+
+model VendorPaymentAllocation {
+  id              String   @id @default(cuid())
+  vendorPaymentId String
+  vendorInvoiceId String
+  amount          Float
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  vendorPayment VendorPayment @relation(fields: [vendorPaymentId], references: [id], onDelete: Cascade)
+  vendorInvoice VendorInvoice @relation(fields: [vendorInvoiceId], references: [id])
+
+  @@unique([vendorPaymentId, vendorInvoiceId])
+  @@index([vendorPaymentId])
+  @@index([vendorInvoiceId])
+}
+
+// ---- Phase 8: Energy Projects + Sites + Installation Management ----
+// Connects the commercial workflow (Quotation → Sales Order → Invoice) to
+// operational execution. Deliberately does NOT duplicate Sales Order line
+// items, inventory quantities, or financial totals — ProjectItem snapshots
+// only what's needed to track scope/fulfillment; commercial figures are
+// always read live from SalesOrder/Invoice/Payment (see projects/queries.ts).
+
+model ProjectSite {
+  id         String @id @default(cuid())
+  companyId  String
+  customerId String
+
+  name          String
+  line1         String
+  line2         String?
+  city          String?
+  state         String?
+  pincode       String?
+  landmark      String?
+  contactPerson String?
+  contactPhone  String?
+  contactEmail  String?
+  notes         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company            Company              @relation(fields: [companyId], references: [id])
+  customer           Party                @relation(fields: [customerId], references: [id])
+  projects           EnergyProject[]
+  installations      Installation[]
+  installedEquipment InstalledEquipment[]
+  warranties         Warranty[]
+  amcs               AMC[]
+  serviceRequests    ServiceRequest[]
+  maintenanceVisits  MaintenanceVisit[]
+  expenses           Expense[]
+
+  @@index([companyId, customerId])
+}
+
+model EnergyProject {
+  id            String @id @default(cuid())
+  companyId     String
+  projectNumber String
+  status        String @default("DRAFT")
+  // DRAFT | PLANNED | IN_PROGRESS | ON_HOLD | COMPLETED | CANCELLED
+  priority      String @default("NORMAL") // LOW | NORMAL | HIGH | URGENT
+  type          String
+  // SOLAR_INSTALLATION | SOLAR_BATTERY | GENERATOR_INSTALLATION |
+  // POWER_BACKUP | EQUIPMENT_SUPPLY | EQUIPMENT_SUPPLY_INSTALLATION |
+  // ELECTRICAL_INSTALLATION | SERVICE_INSTALLATION | CUSTOM
+
+  customerId   String
+  salesOrderId String? // the commercial source of truth — never duplicated, only referenced
+  siteId       String?
+
+  name                   String
+  description            String?
+  startDate              DateTime?
+  expectedCompletionDate DateTime?
+  actualCompletionDate   DateTime?
+  projectManagerId       String?
+  notes                  String?
+
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company            Company              @relation(fields: [companyId], references: [id])
+  customer           Party                @relation(fields: [customerId], references: [id])
+  salesOrder         SalesOrder?          @relation(fields: [salesOrderId], references: [id])
+  site               ProjectSite?         @relation(fields: [siteId], references: [id])
+  projectManager     User?                @relation("ProjectManager", fields: [projectManagerId], references: [id])
+  items              ProjectItem[]
+  milestones         ProjectMilestone[]
+  installations      Installation[]
+  serials            SerialNumber[]
+  installedEquipment InstalledEquipment[]
+  warranties         Warranty[]
+  amcs               AMC[]
+  serviceRequests    ServiceRequest[]
+  maintenanceVisits  MaintenanceVisit[]
+  expenses           Expense[]
+
+  @@unique([companyId, projectNumber])
+  @@index([companyId, status])
+  @@index([companyId, customerId])
+  @@index([companyId, siteId])
+}
+
+// The scope of work — snapshotted from the source Sales Order's line items
+// (never a live join, so later SO edits don't rewrite an in-flight
+// project's scope) with fulfillment counters layered on top.
+model ProjectItem {
+  id          String  @id @default(cuid())
+  projectId   String
+  productId   String?
+  // Snapshots so a later product edit/deactivation never rewrites history.
+  productName String
+  productCode String?
+  unitLabel   String?
+
+  requiredQuantity  Float
+  // Cached counters — for serial-tracked products these are always
+  // recomputed from SerialNumber rows (see installations/ledger.ts); for
+  // non-serial products they're incremented directly by the assign/install
+  // actions, capped at required/assigned respectively. Never a second,
+  // independently-maintained stock quantity.
+  assignedQuantity  Float @default(0)
+  installedQuantity Float @default(0)
+  sortOrder         Int   @default(0)
+
+  project           EnergyProject      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  product           Product?           @relation(fields: [productId], references: [id])
+  installationItems InstallationItem[]
+
+  @@index([projectId])
+}
+
+model ProjectMilestone {
+  id          String    @id @default(cuid())
+  projectId   String
+  name        String
+  status      String    @default("PENDING") // PENDING | IN_PROGRESS | COMPLETED | SKIPPED
+  plannedDate DateTime?
+  actualDate  DateTime?
+  notes       String?
+  sortOrder   Int       @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project EnergyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model Installation {
+  id                 String    @id @default(cuid())
+  companyId          String
+  installationNumber String
+  projectId          String
+  siteId             String?
+  status             String    @default("PLANNED")
+  // PLANNED | SCHEDULED | IN_PROGRESS | COMPLETED | CANCELLED
+  installationDate   DateTime  @default(now())
+  technicianId       String?
+  // Simple, extensible {checklistKey: boolean} blob — same pattern as
+  // Quotation.technicalConfigJson — not a separate checklist-items table.
+  checklistJson      String?
+  notes              String?
+  completedAt        DateTime?
+  completedBy        String?
+
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company            Company              @relation(fields: [companyId], references: [id])
+  project            EnergyProject        @relation(fields: [projectId], references: [id])
+  site               ProjectSite?         @relation(fields: [siteId], references: [id])
+  technician         User?                @relation("InstallationTechnician", fields: [technicianId], references: [id])
+  items              InstallationItem[]
+  installedEquipment InstalledEquipment[]
+
+  @@unique([companyId, installationNumber])
+  @@index([companyId, status])
+  @@index([companyId, projectId])
+}
+
+model InstallationItem {
+  id                String  @id @default(cuid())
+  installationId    String
+  projectItemId     String
+  productId         String?
+  productName       String
+  quantity          Float
+  serialNumbersJson String?
+  sortOrder         Int     @default(0)
+
+  installation Installation @relation(fields: [installationId], references: [id], onDelete: Cascade)
+  projectItem  ProjectItem  @relation(fields: [projectItemId], references: [id])
+  product      Product?     @relation(fields: [productId], references: [id])
+
+  @@index([installationId])
+  @@index([projectItemId])
+}
+
+// ---- Phase 9: Warranty + AMC + Maintenance/Service Management ----
+// After-sales operational layer on top of Phase 8's installation execution.
+// InstalledEquipment is a new registry entity — one row per physically
+// installed unit (serial-tracked products get one row per serial) or per
+// installed batch (non-serial products get one row per InstallationItem) —
+// created only by Installation completion (see
+// installations/actions.ts:completeInstallationAction), never a second
+// source of stock/serial truth. Warranty/AMC/Service hang off Customer
+// (+Site/Project) and, where equipment-level makes sense, off
+// InstalledEquipment directly. Chargeable service reuses the existing
+// Invoice/Receivables/Ledger machinery (a nullable FK, not a new financial
+// system) and part consumption reuses applyStockMovement (not a new
+// inventory system).
+
+model InstalledEquipment {
+  id              String @id @default(cuid())
+  companyId       String
+  equipmentNumber String // "EQP-0001"
+
+  customerId     String
+  siteId         String?
+  projectId      String
+  installationId String
+
+  productId        String?
+  productName      String // snapshot — survives a later product edit/deactivation
+  productCode      String?
+  serialNumberId   String? // set only for serial-tracked units (one row per serial)
+  serialNumberText String? // snapshot, so it stays readable even if the serial row is ever removed
+  quantity         Float   @default(1)
+
+  installationDate DateTime
+  status           String   @default("INSTALLED")
+  // INSTALLED | ACTIVE | UNDER_MAINTENANCE | REPLACED | REMOVED | RETIRED
+
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company         Company       @relation(fields: [companyId], references: [id])
+  customer        Party         @relation(fields: [customerId], references: [id])
+  site            ProjectSite?  @relation(fields: [siteId], references: [id])
+  project         EnergyProject @relation(fields: [projectId], references: [id])
+  installation    Installation  @relation(fields: [installationId], references: [id])
+  product         Product?      @relation(fields: [productId], references: [id])
+  serialNumberRef SerialNumber? @relation(fields: [serialNumberId], references: [id])
+
+  warranties        Warranty[]
+  serviceRequests   ServiceRequest[]
+  maintenanceVisits MaintenanceVisit[]
+
+  @@unique([companyId, equipmentNumber])
+  @@unique([serialNumberId])
+  @@index([companyId, customerId])
+  @@index([companyId, siteId])
+  @@index([companyId, projectId])
+  @@index([companyId, status])
+}
+
+model Warranty {
+  id             String @id @default(cuid())
+  companyId      String
+  warrantyNumber String // "WAR-0001"
+
+  customerId           String
+  siteId               String?
+  projectId            String?
+  installedEquipmentId String? // preferred when serialised equipment exists
+
+  warrantyType      String // MANUFACTURER | SUPPLIER | INSTALLATION | EXTENDED | OTHER
+  startDate         DateTime
+  endDate           DateTime
+  durationMonths    Int?
+  terms             String?
+  coverage          String?
+  exclusions        String?
+  // ACTIVE is the normal starting value; NOT_STARTED / EXPIRING_SOON /
+  // EXPIRED are always derived live from startDate/endDate (see
+  // warranties/types.ts:computeWarrantyStatus), never typed by a user.
+  // CANCELLED is the only status a user action ever writes here.
+  status            String   @default("ACTIVE")
+  documentReference String?
+
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company            Company             @relation(fields: [companyId], references: [id])
+  customer           Party               @relation(fields: [customerId], references: [id])
+  site               ProjectSite?        @relation(fields: [siteId], references: [id])
+  project            EnergyProject?      @relation(fields: [projectId], references: [id])
+  installedEquipment InstalledEquipment? @relation(fields: [installedEquipmentId], references: [id])
+  serviceRequests    ServiceRequest[]
+
+  @@unique([companyId, warrantyNumber])
+  @@index([companyId, customerId])
+  @@index([companyId, installedEquipmentId])
+  @@index([companyId, status])
+}
+
+model AMC {
+  id        String @id @default(cuid())
+  companyId String
+  amcNumber String // "AMC-0001"
+
+  customerId String
+  siteId     String?
+  projectId  String?
+
+  startDate        DateTime
+  endDate          DateTime
+  contractValue    Float?
+  billingFrequency String? // ONE_TIME | MONTHLY | QUARTERLY | HALF_YEARLY | ANNUAL
+  numberOfVisits   Int      @default(0)
+  // Visits used/remaining are always computed live from MaintenanceVisit
+  // rows linked to this AMC (see amc/queries.ts) — never a stored counter.
+  coverage         String?
+  exclusions       String?
+  // DRAFT is the only "not yet effective" state set manually; ACTIVE /
+  // EXPIRING_SOON / EXPIRED are derived live from dates (see
+  // amc/types.ts:computeAmcStatus) — CANCELLED/COMPLETED are explicit user
+  // actions, mirroring Warranty's status pattern.
+  status           String   @default("DRAFT")
+  notes            String?
+
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company           Company            @relation(fields: [companyId], references: [id])
+  customer          Party              @relation(fields: [customerId], references: [id])
+  site              ProjectSite?       @relation(fields: [siteId], references: [id])
+  project           EnergyProject?     @relation(fields: [projectId], references: [id])
+  serviceRequests   ServiceRequest[]
+  maintenanceVisits MaintenanceVisit[]
+  invoices          Invoice[]
+
+  @@unique([companyId, amcNumber])
+  @@index([companyId, customerId])
+  @@index([companyId, status])
+}
+
+model ServiceRequest {
+  id            String @id @default(cuid())
+  companyId     String
+  requestNumber String // "SR-0001"
+
+  customerId           String
+  siteId               String?
+  projectId            String?
+  installedEquipmentId String?
+
+  source      String // COMPLAINT | PHONE_CALL | INSPECTION | PREVENTIVE_MAINTENANCE | AMC_VISIT | WARRANTY_ISSUE | POST_INSTALLATION_SUPPORT | OTHER
+  requestDate DateTime @default(now())
+  issue       String
+  description String?
+  priority    String   @default("MEDIUM") // LOW | MEDIUM | HIGH | CRITICAL
+
+  serviceType             String  @default("CHARGEABLE") // WARRANTY | AMC | CHARGEABLE | OTHER
+  amcId                   String?
+  warrantyId              String?
+  // Point-in-time snapshot of coverage at request time (same pattern as
+  // PaymentReminder.outstandingAtReminder) — a warranty/AMC expiring later
+  // never silently rewrites what staff saw when this was logged.
+  warrantyStatusAtRequest String?
+  amcStatusAtRequest      String?
+
+  assignedToId      String?
+  expectedVisitDate DateTime?
+
+  status     String  @default("OPEN")
+  // OPEN | ASSIGNED | SCHEDULED | IN_PROGRESS | WAITING_FOR_CUSTOMER |
+  // WAITING_FOR_PARTS | RESOLVED | CLOSED | CANCELLED
+  resolution String?
+
+  // Set once a chargeable request has an Energy Invoice created for it —
+  // reuses the existing Invoice/Receivables/Ledger chain, never a second
+  // "ServiceInvoice"/"ServiceReceivable" system.
+  invoiceId String?
+
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company            Company             @relation(fields: [companyId], references: [id])
+  customer           Party               @relation(fields: [customerId], references: [id])
+  site               ProjectSite?        @relation(fields: [siteId], references: [id])
+  project            EnergyProject?      @relation(fields: [projectId], references: [id])
+  installedEquipment InstalledEquipment? @relation(fields: [installedEquipmentId], references: [id])
+  amc                AMC?                @relation(fields: [amcId], references: [id])
+  warranty           Warranty?           @relation(fields: [warrantyId], references: [id])
+  assignedTo         User?               @relation("ServiceAssignee", fields: [assignedToId], references: [id])
+  invoice            Invoice?            @relation(fields: [invoiceId], references: [id])
+  maintenanceVisits  MaintenanceVisit[]
+
+  @@unique([companyId, requestNumber])
+  @@index([companyId, customerId])
+  @@index([companyId, status])
+  @@index([companyId, priority])
+}
+
+model MaintenanceVisit {
+  id          String @id @default(cuid())
+  companyId   String
+  visitNumber String // "MNT-0001"
+
+  customerId           String
+  siteId               String?
+  projectId            String?
+  installedEquipmentId String?
+  serviceRequestId     String?
+  amcId                String?
+  technicianId         String?
+
+  visitType String // WARRANTY_SERVICE | AMC_PREVENTIVE_MAINTENANCE | BREAKDOWN_SERVICE | INSTALLATION_FOLLOWUP | INSPECTION | GENERAL_SERVICE
+  visitDate DateTime @default(now())
+  status    String   @default("PLANNED") // PLANNED | IN_PROGRESS | COMPLETED | CANCELLED
+
+  // Simple, extensible {checklistKey: boolean} blob — same pattern as
+  // Installation.checklistJson — not a separate checklist-items table.
+  checklistJson       String?
+  findings            String?
+  workPerformed       String?
+  result              String?
+  customerRemarks     String?
+  technicianRemarks   String?
+  nextMaintenanceDate DateTime?
+
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company            Company             @relation(fields: [companyId], references: [id])
+  customer           Party               @relation(fields: [customerId], references: [id])
+  site               ProjectSite?        @relation(fields: [siteId], references: [id])
+  project            EnergyProject?      @relation(fields: [projectId], references: [id])
+  installedEquipment InstalledEquipment? @relation(fields: [installedEquipmentId], references: [id])
+  serviceRequest     ServiceRequest?     @relation(fields: [serviceRequestId], references: [id])
+  amc                AMC?                @relation(fields: [amcId], references: [id])
+  technician         User?               @relation("MaintenanceTechnician", fields: [technicianId], references: [id])
+  partsUsed          ServicePartUsage[]
+
+  @@unique([companyId, visitNumber])
+  @@index([companyId, customerId])
+  @@index([companyId, status])
+  @@index([companyId, serviceRequestId])
+  @@index([companyId, amcId])
+}
+
+// One inventory-consuming line per part used on a maintenance visit —
+// always created alongside a real StockMovement (STOCK_OUT via
+// applyStockMovement) so consumption is traceable and never a second,
+// disconnected stock ledger.
+model ServicePartUsage {
+  id                 String  @id @default(cuid())
+  maintenanceVisitId String
+  productId          String
+  productName        String
+  quantity           Float
+  locationId         String
+  stockMovementId    String?
+
+  createdAt DateTime @default(now())
+
+  maintenanceVisit MaintenanceVisit @relation(fields: [maintenanceVisitId], references: [id], onDelete: Cascade)
+  product          Product          @relation(fields: [productId], references: [id])
+  location         Location         @relation(fields: [locationId], references: [id])
+
+  @@index([maintenanceVisitId])
+}
+
+// ---- Phase 10: Expenses + Profitability + Management Reporting ----
+// A management-visibility layer on top of existing transactions — NOT a
+// general ledger. Profitability/reporting figures are always computed live
+// from Invoice/VendorInvoice/Payment/VendorPayment/Expense/ProjectItem rows
+// (see src/lib/energy/reporting) — nothing here stores a calculated
+// dashboard/profit number as primary truth (per spec section 47).
+
+model ExpenseCategory {
+  id        String   @id @default(cuid())
+  companyId String
+  name      String
+  group     String? // e.g. "Operations" | "Office" | "Business" — free text, not enforced
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company  Company   @relation(fields: [companyId], references: [id])
+  expenses Expense[]
+
+  @@unique([companyId, name])
+  @@index([companyId])
+}
+
+model Expense {
+  id            String @id @default(cuid())
+  companyId     String
+  expenseNumber String // "EXP-0001"
+
+  expenseDate DateTime @default(now())
+  categoryId  String
+  amount      Float
+  taxRate     Float?
+  taxAmount   Float    @default(0)
+  grandTotal  Float    @default(0) // amount + taxAmount, rounded via shared/pricing.round2
+
+  paymentMode     String? // reuses PAYMENT_MODES from energy/payments/types.ts
+  vendorId        String? // payee, when the cost is attributable to a vendor without its own Vendor Invoice
+  projectId       String?
+  siteId          String?
+  description     String?
+  referenceNumber String? // external bill/reference number
+
+  status String @default("DRAFT")
+  // DRAFT | APPROVED | PAID | CANCELLED — PAID is only ever set once
+  // paidAmount reaches grandTotal (see expenses/actions.ts); "Partially
+  // Paid" is a computed overlay badge, not a stored status, mirroring the
+  // Invoice "Overdue" badge pattern from Phase 5.
+
+  // Minimal payment tracking — deliberately not a separate allocation
+  // ledger (spec explicitly allows this for a single one-off cost); reflects
+  // the most recent/cumulative payment against this expense.
+  paidAmount             Float     @default(0)
+  paymentDate            DateTime?
+  paymentReferenceNumber String?
+
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company  Company         @relation(fields: [companyId], references: [id])
+  category ExpenseCategory @relation(fields: [categoryId], references: [id])
+  vendor   Party?          @relation(fields: [vendorId], references: [id])
+  project  EnergyProject?  @relation(fields: [projectId], references: [id])
+  site     ProjectSite?    @relation(fields: [siteId], references: [id])
+
+  @@unique([companyId, expenseNumber])
+  @@index([companyId, status])
+  @@index([companyId, projectId])
+  @@index([companyId, categoryId])
+  @@index([companyId, expenseDate])
+}
+
+// Append-only record of important actions. Never updated or deleted by the
+// application — only inserted.
+model AuditLog {
+  id         String   @id @default(cuid())
+  companyId  String
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  before     String?
+  after      String?
+  createdAt  DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id])
+  user    User?   @relation(fields: [userId], references: [id])
+
+  @@index([companyId, createdAt])
+  @@index([entityType, entityId])
+}

@@ -1,0 +1,61 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+Thumbs.db
+*.pem
+
+# IDE metadata
+.vscode/
+.idea/
+*.swp
+
+# debug / logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.log
+logs/
+
+# env files (can opt-in for committing if needed)
+.env*
+!.env.example
+
+# local SQLite database (belt-and-suspenders: exact known path plus a
+# general pattern in case a db file is ever created elsewhere by mistake --
+# migration files are .sql, not .db/.db-journal, so this never touches them)
+/prisma/dev.db
+/prisma/dev.db-journal
+*.db
+*.db-journal
+
+# uploaded documents (local disk storage)
+/storage/
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
