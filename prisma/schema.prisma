@@ -37,6 +37,8 @@ model Company {
   pincode           String?
   phone             String?
   email             String?
+  website           String?
+  tagline           String? // short line under the company name on letterhead-style documents (e.g. a dealer/partner badge)
   bankAccountName   String?
   bankName          String?
   bankAccountNumber String?

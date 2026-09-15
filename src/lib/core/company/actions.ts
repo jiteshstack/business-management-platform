@@ -26,6 +26,8 @@ export async function updateCompanyProfileAction(
     pincode: str(formData, "pincode"),
     phone: str(formData, "phone"),
     email: str(formData, "email"),
+    website: str(formData, "website"),
+    tagline: str(formData, "tagline"),
     bankAccountName: str(formData, "bankAccountName"),
     bankName: str(formData, "bankName"),
     bankAccountNumber: str(formData, "bankAccountNumber"),

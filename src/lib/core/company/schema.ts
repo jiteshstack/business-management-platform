@@ -19,6 +19,8 @@ export const companyProfileFormSchema = z.object({
   pincode: optionalTrimmed,
   phone: optionalTrimmed,
   email: optionalTrimmed,
+  website: optionalTrimmed,
+  tagline: optionalTrimmed,
   bankAccountName: optionalTrimmed,
   bankName: optionalTrimmed,
   bankAccountNumber: optionalTrimmed,

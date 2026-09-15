@@ -19,6 +19,8 @@ export type CompanyProfileDefaults = {
   pincode?: string | null;
   phone?: string | null;
   email?: string | null;
+  website?: string | null;
+  tagline?: string | null;
   bankAccountName?: string | null;
   bankName?: string | null;
   bankAccountNumber?: string | null;
@@ -75,6 +77,17 @@ export function CompanyProfileForm({
           {state.error ? <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p> : null}
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field id="tagline" label="Tagline" error={fieldErrors.tagline}>
+              <Input
+                id="tagline"
+                name="tagline"
+                defaultValue={value("tagline")}
+                placeholder="e.g. Authorized Solar Dealer"
+              />
+            </Field>
+            <Field id="website" label="Website" error={fieldErrors.website}>
+              <Input id="website" name="website" defaultValue={value("website")} placeholder="e.g. www.example.com" />
+            </Field>
             <Field id="gstin" label="GSTIN" error={fieldErrors.gstin}>
               <Input id="gstin" name="gstin" defaultValue={value("gstin")} placeholder="e.g. 09AAAFJ5441N1Z3" />
             </Field>

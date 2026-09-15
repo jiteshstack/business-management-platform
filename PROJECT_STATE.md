@@ -327,6 +327,45 @@ GSTIN, address, or bank details (this gap was previously deferred as "Company pr
   hand. `tsc --noEmit`, `npm run lint`, and `npm run build` all pass clean.
 - Only the Sales Invoice print view was changed. Vendor Invoice, Purchase Order, Sales Order, and
   Quotation print views still use their earlier, simpler layout - revisit them the same way if asked.
+- Follow-up fix: the invoice's signatory footer plus a lack of explicit `@page` sizing let the last
+  few lines spill onto an otherwise-empty second page for some print margin settings. Fixed with
+  `@page { size: A4; margin: 10mm }` (globals.css, `@media print`), tighter footer spacing, and
+  `print:break-inside-avoid` on the tables/footer grid. Verified with a real PDF export
+  (`page.pdf({ preferCSSPageSize: true })`) - single page now. Chrome's print-dialog "Headers and
+  footers" option is outside the page's own control.
+
+## Post-baseline change: Solar Quotation print layout
+
+Same driver as the invoice change above - a real reference document (a company's own on-grid/off-grid
+solar "project report" proposal) was used to restyle the Quotation print view
+(`/sales/quotations/[id]/print`), for `ON_GRID_SOLAR`/`OFF_GRID_SOLAR`/`HYBRID_SOLAR` types specifically.
+
+- **`Company` gained `website` and `tagline`** (both optional, additive migration) - shown on the
+  quotation's letterhead header alongside the address/GSTIN/bank fields added for the invoice work.
+- **`Quotation.technicalConfigJson`** (an existing free-form JSON blob - Phase 4 already anticipated
+  needing this) gained more keys for solar: manufacturer/warranty/specification per component
+  (`moduleManufacturer`, `moduleWarranty`, `inverterManufacturer`, `inverterSpecification`,
+  `inverterWarranty`, `batteryManufacturer`, `batterySpecification`, `batteryWarranty`,
+  `windSpeedResistance`, `mountingWarranty`, `installationIncluded`, `installationExcluded`,
+  `transportationCost`) - no schema change needed, since this field was always meant to hold
+  exactly this kind of flexible per-quotation-type spec sheet.
+- **Print view rewritten** to a letterhead-style proposal layout: company letterhead, ref/date,
+  customer address block with a "Dear Sir/Madam" salutation, a boxed system summary (capacity /
+  module / battery / transportation / price / validity), the existing line-items table, then four
+  separate spec tables (Solar PV Module, Inverter/PCU, Battery - hidden for `ON_GRID_SOLAR`,
+  Mounting Structure) plus Installation Included/Excluded lists, Payment Terms, Delivery & Warranty,
+  Terms & Conditions, and a Bank Details/signature footer. DG-type quotations keep the old flat
+  key/value technical dump (out of scope this round - the two reference documents were both solar).
+  Deliberately did **not** hardcode the reference company's own marketing/legal boilerplate (vision
+  and mission paragraphs, specific warranty/force-majeure clauses) into the app's source - that's
+  this one tenant's copy, not a structural requirement, and belongs in `Company.defaultQuotationTerms`
+  (already designed to be snapshotted per quotation) if they want to paste it in themselves.
+- Verified in the browser for both `OFF_GRID_SOLAR` (with a Battery section) and `ON_GRID_SOLAR`
+  (Battery section correctly absent) using realistic values from the reference documents.
+  `tsc --noEmit`, `npm run lint`, and `npm run build` all pass clean. This is a naturally multi-section
+  document (matching the multi-page reference), so - unlike the invoice - no attempt was made to force
+  it onto one printed page; `print:break-inside-avoid` was still added to the spec tables/summary
+  box/footer so a page break (if one occurs) doesn't land mid-table.
 
 ## Recommended next phase
 
