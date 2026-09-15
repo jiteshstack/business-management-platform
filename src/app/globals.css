@@ -24,3 +24,16 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Printed documents (invoices, etc.) supply their own margins via `@page` so
+   layout doesn't depend on the browser's/printer's own default margin
+   setting - a page with looser default margins is what previously pushed
+   the last few lines of a one-page invoice onto an otherwise-empty second
+   page. This does not affect Chrome's own "Headers and footers" print
+   option, which the user must still uncheck themselves for a clean export. */
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+}

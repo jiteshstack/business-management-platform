@@ -137,7 +137,7 @@ export async function InvoicePrintView({ id }: { id: string }) {
         </div>
 
         {/* Line items */}
-        <table className="w-full border-collapse text-xs">
+        <table className="w-full border-collapse text-xs print:break-inside-avoid">
           <thead>
             <tr className="border-b border-slate-900 text-left">
               <th className="w-8 border-r border-slate-900 px-2 py-1">Sl No.</th>
@@ -245,7 +245,7 @@ export async function InvoicePrintView({ id }: { id: string }) {
         </div>
 
         {/* HSN/SAC tax summary */}
-        <table className="w-full border-collapse border-t border-slate-900 text-xs">
+        <table className="w-full border-collapse border-t border-slate-900 text-xs print:break-inside-avoid">
           <thead>
             <tr className="border-b border-slate-900 text-left">
               <th className="border-r border-slate-900 px-2 py-1">HSN/SAC</th>
@@ -311,7 +311,7 @@ export async function InvoicePrintView({ id }: { id: string }) {
         </div>
 
         {/* Bank details, PAN, declaration, signatory */}
-        <div className="grid grid-cols-2 border-t border-slate-900 text-xs">
+        <div className="grid grid-cols-2 border-t border-slate-900 text-xs print:break-inside-avoid">
           <div className="border-r border-slate-900 p-2">
             <p className="mb-1 font-semibold">Declaration</p>
             <p className="text-slate-600">
@@ -330,8 +330,8 @@ export async function InvoicePrintView({ id }: { id: string }) {
                 <p>Branch &amp; IFS Code: {company?.bankIfsc ?? "-"}</p>
               </>
             ) : null}
-            <p className="mt-8 text-right">for {company?.name ?? "the Company"}</p>
-            <p className="mt-8 text-right">Authorised Signatory</p>
+            <p className="mt-6 text-right">for {company?.name ?? "the Company"}</p>
+            <p className="mt-6 text-right">Authorised Signatory</p>
           </div>
         </div>
       </div>
