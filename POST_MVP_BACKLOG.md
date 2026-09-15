@@ -58,7 +58,8 @@ unless they're a P0/P1 fix to something already promised in the MVP (see
 
 - User self-service management UI (create/edit/deactivate users from within the app, rather than
   direct database access during initial setup)
-- Company profile editing (address, logo, tax details) beyond what Settings currently exposes
+- Company logo upload (GSTIN/PAN/address/bank details are now editable under Settings -> Company,
+  added to support the GST tax invoice print layout)
 - Multi-company / multi-vertical support beyond the current single Energy Solutions tenant
   (architecture supports it; no second vertical has been built)
 - Pharma vertical (explicitly out of scope for this product line so far)

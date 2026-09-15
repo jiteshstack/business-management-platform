@@ -29,6 +29,7 @@ type ProductFormDefaults = {
   purchasePrice?: number | null;
   sellingPrice?: number | null;
   taxRate?: number | null;
+  hsnCode?: string | null;
   defaultVendorId?: string | null;
   warrantyMonths?: number | null;
   serialTracked?: boolean;
@@ -203,6 +204,9 @@ export function ProductForm({
           </Field>
           <Field id="warrantyMonths" label="Warranty (months)" error={fieldErrors.warrantyMonths}>
             <Input id="warrantyMonths" name="warrantyMonths" type="number" step="1" min="0" defaultValue={value("warrantyMonths")} />
+          </Field>
+          <Field id="hsnCode" label="HSN / SAC Code" error={fieldErrors.hsnCode}>
+            <Input id="hsnCode" name="hsnCode" defaultValue={value("hsnCode")} placeholder="e.g. 85021100" />
           </Field>
         </CardContent>
       </Card>

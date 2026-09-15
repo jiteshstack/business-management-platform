@@ -12,6 +12,7 @@ import {
   setUnitActiveAction,
 } from "@/lib/energy/inventory/actions";
 import { updateDefaultQuotationTermsAction } from "@/lib/energy/quotations/actions";
+import { updateCompanyProfileAction } from "@/lib/core/company/actions";
 import { listExpenseCategories } from "@/lib/energy/expenses/queries";
 import { createExpenseCategoryAction, setExpenseCategoryActiveAction } from "@/lib/energy/expenses/actions";
 import { PageHeader } from "@/components/shared/page-header";
@@ -19,6 +20,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { SettingsTabs, isSettingsTabKey, type SettingsTabKey } from "@/components/settings/settings-tabs";
 import { MasterDataManager } from "@/components/settings/master-data-manager";
 import { DefaultQuotationTermsForm } from "@/components/settings/default-quotation-terms-form";
+import { CompanyProfileForm } from "@/components/settings/company-profile-form";
 
 export default async function Page({
   searchParams,
@@ -68,13 +70,14 @@ async function CompanyTab({ companyId }: { companyId: string }) {
   const company = await prisma.company.findUnique({ where: { id: companyId } });
   return (
     <div className="space-y-6">
+      <CompanyProfileForm action={updateCompanyProfileAction} defaults={company ?? {}} />
       <DefaultQuotationTermsForm
         action={updateDefaultQuotationTermsAction}
         defaultValue={company?.defaultQuotationTerms ?? ""}
       />
       <EmptyState
         title="More coming later"
-        description="Company profile, users, roles, and further document numbering settings are planned for a later phase."
+        description="Users, roles, and further document numbering settings are planned for a later phase."
       />
     </div>
   );

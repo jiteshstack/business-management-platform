@@ -167,6 +167,7 @@ function OverviewTab({
             value={product.sellingPrice != null ? `₹${product.sellingPrice.toLocaleString("en-IN")}` : undefined}
           />
           <OverviewField label="Tax / GST Rate" value={product.taxRate != null ? `${product.taxRate}%` : undefined} />
+          <OverviewField label="HSN / SAC Code" value={product.hsnCode} />
           <OverviewField
             label="Warranty"
             value={product.warrantyMonths != null ? `${product.warrantyMonths} month(s)` : undefined}

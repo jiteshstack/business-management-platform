@@ -24,8 +24,26 @@ model Company {
   // Reusable default quotation terms — each quotation snapshots this text at
   // creation time, so editing it later never changes an existing quotation.
   defaultQuotationTerms String?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+
+  // Statutory / print profile — used on printed documents (tax invoices, …).
+  // All optional: nothing forces these to be filled in before the app is
+  // usable, but a GST tax invoice is incomplete without them.
+  gstin             String?
+  pan               String?
+  addressLine1      String?
+  addressLine2      String?
+  city              String?
+  state             String?
+  pincode           String?
+  phone             String?
+  email             String?
+  bankAccountName   String?
+  bankName          String?
+  bankAccountNumber String?
+  bankIfsc          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   users              User[]
   auditLogs          AuditLog[]
@@ -302,6 +320,7 @@ model Product {
   purchasePrice   Float?
   sellingPrice    Float?
   taxRate         Float?
+  hsnCode         String? // HSN (goods) / SAC (services) code, for GST tax invoices
   defaultVendorId String?
   warrantyMonths  Int?
   serialTracked   Boolean  @default(false)

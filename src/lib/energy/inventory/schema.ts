@@ -40,6 +40,7 @@ export const productFormSchema = z.object({
   purchasePrice: optionalNumber,
   sellingPrice: optionalNumber,
   taxRate: optionalNumber,
+  hsnCode: optionalTrimmed,
   defaultVendorId: optionalTrimmed,
   warrantyMonths: optionalInt,
   serialTracked: z.boolean().default(false),

@@ -65,6 +65,7 @@ Purchasing/vendor financials (Phase 7): `PurchaseOrder` + `PurchaseOrderLineItem
 Energy projects (Phase 8): `ProjectSite`, `EnergyProject`, `ProjectItem`, `ProjectMilestone`, `Installation`, `InstallationItem`. Plus a nullable `SerialNumber.projectId` FK (reusing the existing `SerialNumber.status` enum values `ASSIGNED`/`INSTALLED` that were already anticipated in Phase 3), `SalesOrder.projects` reverse relation, `User.managedProjects`/`User.technicianInstallations` reverse relations.
 Warranty/AMC/Service (Phase 9): `InstalledEquipment`, `Warranty`, `AMC`, `ServiceRequest`, `MaintenanceVisit`, `ServicePartUsage`. Plus a nullable `Invoice.amcId` FK (mirrors the existing `salesOrderId`/`quotationId` nullable-FK pattern on Invoice) and a nullable reverse `SerialNumber.installedEquipment` relation.
 Expenses/Reporting (Phase 10): `ExpenseCategory`, `Expense` (nullable `vendorId`/`projectId`/`siteId` FKs). No other new models - profitability/reporting is entirely computed from existing tables, per the spec's explicit "do not store calculated dashboard metrics" instruction.
+Post-baseline (see "GST-Compliant Tax Invoice Layout" below): `Company` gained a statutory/print profile (`gstin`, `pan`, address fields, `phone`, `email`, bank detail fields - all optional); `Product` gained `hsnCode` (optional).
 
 Migrations are additive only; nothing has been dropped or renamed across phases.
 
@@ -291,6 +292,41 @@ first, not directly into a commit.
 No remote was configured, no GitHub repository was created or connected, nothing was pushed, and
 no deployment/CI-CD/hosting/database/production-infrastructure change was made in this phase -
 all explicitly out of scope per the phase instructions.
+
+## Post-baseline change: GST-compliant Tax Invoice layout
+
+Landed as a normal commit on top of `v1.0.0` (not amending the tag) - the first real change since the
+baseline, driven by a concrete UAT need: the Sales Invoice print view (`/sales/invoices/[id]/print`)
+didn't resemble a standard Indian GST tax invoice, and the `Company` model had nowhere to even store a
+GSTIN, address, or bank details (this gap was previously deferred as "Company profile editing" in
+`POST_MVP_BACKLOG.md`).
+
+- **Schema (additive)**: `Company` gained a statutory/print profile - `gstin`, `pan`, address fields,
+  `phone`, `email`, and bank detail fields, all optional. `Product` gained an optional `hsnCode`
+  (HSN for goods / SAC for services).
+- **Settings -> Company** now has an editable form for the new `Company` fields (Owner/Admin only),
+  replacing the old "Company profile ... planned for a later phase" placeholder.
+- **Product form** gained an HSN/SAC Code field (create, edit, and detail view).
+- **`src/lib/energy/shared/amount-in-words.ts`** (new): converts a rupee amount to words using Indian
+  numbering (Lakh/Crore, not Million/Billion) - needed for the invoice's "Amount Chargeable (in words)"
+  and "Tax Amount (in words)" lines.
+- **Invoice print view rewritten** to the classic bordered Tally-style tax invoice layout: seller
+  details + invoice metadata grid, Consignee/Buyer boxes, line items with HSN/SAC and per-unit rate,
+  a CGST+SGST or IGST tax-summary row per distinct tax rate (grouped, not blended, so a mix of e.g. 12%
+  and 18% items shows two separate rows), an HSN/SAC tax summary table, amounts in words, and a
+  bank-details/PAN/declaration/signatory footer. CGST+SGST vs IGST is decided by comparing the
+  company's and client's `state` fields (same state -> CGST+SGST split in half; different -> IGST;
+  either missing -> defaults to CGST+SGST) - this is a **display-time computation only**, not a new
+  stored field or a change to any existing tax calculation; `Invoice`/`InvoiceLineItem`'s
+  `taxAmount`/`grandTotal` are untouched. Fields the reference layout has but this app has no model for
+  (e-Way Bill No., dispatch/transport details, gross/net weight) were intentionally left out rather than
+  shown as permanently-blank placeholders.
+- Verified against a real quotation -> sales order -> invoice chain, in the browser, both for a
+  different-state buyer (IGST split, multiple tax rates) and, via a temporary before/after state edit
+  restored immediately after, a same-state buyer (CGST+SGST split) - both matched the expected math by
+  hand. `tsc --noEmit`, `npm run lint`, and `npm run build` all pass clean.
+- Only the Sales Invoice print view was changed. Vendor Invoice, Purchase Order, Sales Order, and
+  Quotation print views still use their earlier, simpler layout - revisit them the same way if asked.
 
 ## Recommended next phase
 
