@@ -140,8 +140,10 @@ export async function QuotationPrintView({ id }: { id: string }) {
       <section className="mb-4 border border-slate-900 print:break-inside-avoid">
         <p className="border-b border-slate-900 bg-slate-50 px-2 py-1 text-center text-sm font-bold">
           QUOTATION FOR {config.systemCapacity ? `${config.systemCapacity} KWP ` : ""}
-          {(QUOTATION_TYPE_LABELS[type] ?? quotation.type).toUpperCase()} SYSTEM
+          {(QUOTATION_TYPE_LABELS[type] ?? quotation.type).toUpperCase()}
+          {isSolar || isDg || type === "BATTERY_INVERTER" ? " SYSTEM" : ""}
         </p>
+        {config.systemCapacity || (config.panelWattage && config.panelQuantity) || config.batteryQuantity || config.transportationCost ? (
         <div className="grid grid-cols-2 gap-x-4 gap-y-1 px-3 py-2 text-xs sm:grid-cols-4">
           {config.systemCapacity ? (
             <div>
@@ -172,6 +174,7 @@ export async function QuotationPrintView({ id }: { id: string }) {
             </div>
           ) : null}
         </div>
+        ) : null}
         <div className="flex items-center justify-between border-t border-slate-900 px-3 py-2">
           <p className="text-sm font-bold">Price (including GST)</p>
           <p className="text-sm font-bold">Rs. {quotation.grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</p>
@@ -344,6 +347,12 @@ export async function QuotationPrintView({ id }: { id: string }) {
           {quotation.installationTimeline ? <p>Installation: {quotation.installationTimeline}</p> : null}
           {quotation.equipmentWarranty ? <p>Equipment Warranty: {quotation.equipmentWarranty}</p> : null}
           {quotation.installationWarranty ? <p>Installation Warranty: {quotation.installationWarranty}</p> : null}
+          {!quotation.deliveryTimeline &&
+          !quotation.installationTimeline &&
+          !quotation.equipmentWarranty &&
+          !quotation.installationWarranty ? (
+            <p className="text-slate-400">-</p>
+          ) : null}
         </div>
       </section>
 
