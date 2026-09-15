@@ -76,6 +76,7 @@ export async function QuotationPrintView({ id }: { id: string }) {
   // structured layout below), fall back to a generic key/value dump so no
   // captured data is silently dropped from the print view.
   const genericConfigEntries = Object.entries(config).filter(([, v]) => v);
+  const hasSolarTechnicalData = genericConfigEntries.length > 0;
 
   const itemDiscountTotal = quotation.items.reduce((sum, item) => sum + item.discountAmount, 0);
 
@@ -259,7 +260,7 @@ export async function QuotationPrintView({ id }: { id: string }) {
       </section>
 
       {/* Technical details */}
-      {isSolar ? (
+      {isSolar && hasSolarTechnicalData ? (
         <section className="mb-4">
           <p className="mb-2 text-sm font-bold">Technical Details</p>
           <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
