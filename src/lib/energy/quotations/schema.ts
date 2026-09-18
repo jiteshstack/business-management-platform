@@ -21,6 +21,7 @@ export const quotationFormSchema = z.object({
   discountPercent: optionalNumber,
   otherCharges: optionalNumber,
   technicalConfigJson: optionalTrimmed,
+  proposalContentJson: optionalTrimmed,
   items: itemsJsonField,
 });
 

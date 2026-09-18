@@ -47,8 +47,26 @@ function readQuotationForm(formData: FormData) {
     discountPercent: str(formData, "discountPercent"),
     otherCharges: str(formData, "otherCharges"),
     technicalConfigJson: str(formData, "technicalConfigJson"),
+    proposalContentJson: str(formData, "proposalContentJson"),
     items: str(formData, "items") ?? "",
   };
+}
+
+function formatAddress(address: {
+  line1: string;
+  line2: string | null;
+  city: string | null;
+  state: string | null;
+  pincode: string | null;
+}) {
+  return [address.line1, address.line2, address.city, address.state, address.pincode].filter(Boolean).join(", ");
+}
+
+async function resolveBillingAddressText(clientId: string): Promise<string | undefined> {
+  const address = await prisma.partyAddress.findFirst({
+    where: { partyId: clientId, type: "BILLING", isDefault: true },
+  });
+  return address ? formatAddress(address) : undefined;
 }
 
 async function buildLineItemRows(companyId: string, items: LineItemFormValues[]) {
@@ -142,9 +160,11 @@ export async function createQuotationAction(
   const totals = calculateDocumentTotals(values.items, values.discountPercent, values.otherCharges);
   const quotationDate = new Date(values.quotationDate);
   const validUntil = values.validUntil ? new Date(values.validUntil) : defaultValidUntil(quotationDate);
+  const billingAddressText = await resolveBillingAddressText(client.id);
 
   const company = await prisma.company.findUnique({ where: { id: session.companyId } });
   const termsAndConditions = values.termsAndConditions ?? company?.defaultQuotationTerms ?? undefined;
+  const proposalContentJson = values.proposalContentJson ?? company?.proposalContentJson ?? undefined;
 
   const quotation = await prisma.$transaction(async (tx) => {
     const quotationNumber = await nextDocumentNumber(tx, {
@@ -161,6 +181,7 @@ export async function createQuotationAction(
         clientId: client.id,
         siteAddressId: values.siteAddressId ?? null,
         siteAddressText,
+        billingAddressText,
         type: values.type,
         status: "DRAFT",
         quotationDate,
@@ -170,6 +191,7 @@ export async function createQuotationAction(
         subject: values.subject,
         notes: values.notes,
         technicalConfigJson: values.technicalConfigJson,
+        proposalContentJson,
         paymentTerms: values.paymentTerms,
         equipmentWarranty: values.equipmentWarranty,
         installationWarranty: values.installationWarranty,
@@ -266,6 +288,7 @@ export async function updateQuotationAction(
   const totals = calculateDocumentTotals(values.items, values.discountPercent, values.otherCharges);
   const quotationDate = new Date(values.quotationDate);
   const validUntil = values.validUntil ? new Date(values.validUntil) : defaultValidUntil(quotationDate);
+  const billingAddressText = await resolveBillingAddressText(client.id);
 
   await prisma.$transaction(async (tx) => {
     await tx.quotationLineItem.deleteMany({ where: { quotationId: id } });
@@ -275,6 +298,7 @@ export async function updateQuotationAction(
         clientId: client.id,
         siteAddressId: values.siteAddressId ?? null,
         siteAddressText,
+        billingAddressText,
         type: values.type,
         quotationDate,
         validUntil,
@@ -283,6 +307,7 @@ export async function updateQuotationAction(
         subject: values.subject,
         notes: values.notes,
         technicalConfigJson: values.technicalConfigJson,
+        proposalContentJson: values.proposalContentJson,
         paymentTerms: values.paymentTerms,
         equipmentWarranty: values.equipmentWarranty,
         installationWarranty: values.installationWarranty,
@@ -382,6 +407,7 @@ export async function createRevisionAction(id: string): Promise<void> {
         clientId: source.clientId,
         siteAddressId: source.siteAddressId,
         siteAddressText: source.siteAddressText,
+        billingAddressText: source.billingAddressText,
         type: source.type,
         status: "DRAFT",
         quotationDate: new Date(),
@@ -391,6 +417,7 @@ export async function createRevisionAction(id: string): Promise<void> {
         subject: source.subject,
         notes: source.notes,
         technicalConfigJson: source.technicalConfigJson,
+        proposalContentJson: source.proposalContentJson,
         paymentTerms: source.paymentTerms,
         equipmentWarranty: source.equipmentWarranty,
         installationWarranty: source.installationWarranty,
@@ -467,6 +494,7 @@ export async function duplicateQuotationAction(id: string): Promise<void> {
         clientId: source.clientId,
         siteAddressId: source.siteAddressId,
         siteAddressText: source.siteAddressText,
+        billingAddressText: source.billingAddressText,
         type: source.type,
         status: "DRAFT",
         quotationDate: new Date(),
@@ -476,6 +504,7 @@ export async function duplicateQuotationAction(id: string): Promise<void> {
         subject: source.subject,
         notes: source.notes,
         technicalConfigJson: source.technicalConfigJson,
+        proposalContentJson: source.proposalContentJson,
         paymentTerms: source.paymentTerms,
         equipmentWarranty: source.equipmentWarranty,
         installationWarranty: source.installationWarranty,

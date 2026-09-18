@@ -9,6 +9,8 @@ import {
   type QuotationType,
 } from "@/lib/energy/quotations/types";
 import { PrintButton } from "@/components/shared/print-button";
+import { parseProposalContent } from "@/lib/energy/quotations/proposal-content";
+import { amountInWords } from "@/lib/energy/shared/amount-in-words";
 
 function labelize(key: string): string {
   return key.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase());
@@ -77,6 +79,20 @@ export async function QuotationPrintView({ id }: { id: string }) {
   // captured data is silently dropped from the print view.
   const genericConfigEntries = Object.entries(config).filter(([, v]) => v);
   const hasSolarTechnicalData = genericConfigEntries.length > 0;
+  const hasDesignInputs = Boolean(config.projectType || config.areaAvailable || config.siteSurveyStatus);
+
+  const proposal = parseProposalContent(quotation.proposalContentJson);
+  const hasPhilosophy = Boolean(proposal.vision || proposal.mission || proposal.philosophy);
+  const standardClauses = (
+    [
+      ["Delivery", proposal.deliveryTerms],
+      ["Inspection", proposal.inspectionTerms],
+      ["Cancellation", proposal.cancellationTerms],
+      ["Demurrage", proposal.demurrageTerms],
+      ["Warranty", proposal.warrantyClause],
+      ["Force Majeure", proposal.forceMajeureTerms],
+    ] as [string, string | undefined][]
+  ).filter((pair): pair is [string, string] => Boolean(pair[1]));
 
   const itemDiscountTotal = quotation.items.reduce((sum, item) => sum + item.discountAmount, 0);
 
@@ -131,11 +147,40 @@ export async function QuotationPrintView({ id }: { id: string }) {
         {quotation.client.mobile ? <p>{quotation.client.mobile}</p> : null}
         {quotation.client.email ? <p>{quotation.client.email}</p> : null}
         {quotation.client.gstin ? <p>GSTIN: {quotation.client.gstin}</p> : null}
+        {quotation.billingAddressText ? <p className="text-slate-600">{quotation.billingAddressText}</p> : null}
         {quotation.siteAddressText ? <p className="mt-1 text-slate-600">Site: {quotation.siteAddressText}</p> : null}
         <p className="mt-3">Dear Sir/Madam,</p>
         {quotation.subject ? <p className="mt-1 font-medium">Subject: {quotation.subject}</p> : null}
+        {proposal.introduction ? <p className="mt-1 whitespace-pre-wrap text-slate-700">{proposal.introduction}</p> : null}
         {quotation.notes ? <p className="mt-1 whitespace-pre-wrap text-slate-700">{quotation.notes}</p> : null}
       </section>
+
+      {/* Corporate philosophy */}
+      {hasPhilosophy ? (
+        <section className="mb-4 text-xs print:break-inside-avoid">
+          <p className="mb-1 text-sm font-bold print:break-after-avoid">Our Corporate Philosophy</p>
+          <div className="space-y-2">
+            {proposal.vision ? (
+              <div>
+                <p className="font-semibold">Vision</p>
+                <p className="whitespace-pre-wrap text-slate-700">{proposal.vision}</p>
+              </div>
+            ) : null}
+            {proposal.mission ? (
+              <div>
+                <p className="font-semibold">Mission</p>
+                <p className="whitespace-pre-wrap text-slate-700">{proposal.mission}</p>
+              </div>
+            ) : null}
+            {proposal.philosophy ? (
+              <div>
+                <p className="font-semibold">How We Perceive Ourselves</p>
+                <p className="whitespace-pre-wrap text-slate-700">{proposal.philosophy}</p>
+              </div>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
 
       {/* System summary box */}
       <section className="mb-4 border border-slate-900 print:break-inside-avoid">
@@ -257,12 +302,42 @@ export async function QuotationPrintView({ id }: { id: string }) {
             </tbody>
           </table>
         </div>
+        <p className="mt-1 text-right text-xs italic text-slate-600">
+          Amount in Words: INR {amountInWords(quotation.grandTotal)}
+        </p>
       </section>
 
       {/* Technical details */}
       {isSolar && hasSolarTechnicalData ? (
         <section className="mb-4">
-          <p className="mb-2 text-sm font-bold">Technical Details</p>
+          <p className="mb-2 text-sm font-bold print:break-after-avoid">Technical Details</p>
+          {hasDesignInputs ? (
+            <div className="mb-4 print:break-inside-avoid">
+              <p className="mb-1 border-b border-slate-900 pb-1 text-xs font-bold uppercase tracking-wide">Design Inputs</p>
+              <table className="w-full text-xs">
+                <tbody>
+                  {config.projectType ? (
+                    <tr className="border-b border-slate-100">
+                      <td className="w-1/3 py-1 pr-2 text-slate-500">Project Type</td>
+                      <td className="py-1">{config.projectType}</td>
+                    </tr>
+                  ) : null}
+                  {config.areaAvailable ? (
+                    <tr className="border-b border-slate-100">
+                      <td className="w-1/3 py-1 pr-2 text-slate-500">Area Available</td>
+                      <td className="py-1">{config.areaAvailable}</td>
+                    </tr>
+                  ) : null}
+                  {config.siteSurveyStatus ? (
+                    <tr className="border-b border-slate-100">
+                      <td className="w-1/3 py-1 pr-2 text-slate-500">Site Survey</td>
+                      <td className="py-1 whitespace-pre-wrap">{config.siteSurveyStatus}</td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
           <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
             <SpecTable
               title="Solar PV Module Details"
@@ -325,7 +400,7 @@ export async function QuotationPrintView({ id }: { id: string }) {
         </section>
       ) : isDg && genericConfigEntries.length > 0 ? (
         <section className="mb-4">
-          <p className="mb-2 text-sm font-bold">Technical Details</p>
+          <p className="mb-2 text-sm font-bold print:break-after-avoid">Technical Details</p>
           <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
             {genericConfigEntries.map(([key, value]) => (
               <p key={key}>
@@ -358,24 +433,41 @@ export async function QuotationPrintView({ id }: { id: string }) {
       </section>
 
       {/* Terms & conditions */}
-      {quotation.termsAndConditions ? (
+      {standardClauses.length > 0 || quotation.termsAndConditions ? (
         <section className="mb-4">
           <p className="mb-1 text-sm font-bold">Terms &amp; Conditions</p>
-          <p className="whitespace-pre-wrap text-xs text-slate-700">{quotation.termsAndConditions}</p>
+          {standardClauses.length > 0 ? (
+            <div className="mb-2 space-y-1.5 text-xs">
+              {standardClauses.map(([label, text]) => (
+                <p key={label}>
+                  <span className="font-semibold">{label} - </span>
+                  <span className="whitespace-pre-wrap text-slate-700">{text}</span>
+                </p>
+              ))}
+            </div>
+          ) : null}
+          {quotation.termsAndConditions ? (
+            <p className="whitespace-pre-wrap text-xs text-slate-700">{quotation.termsAndConditions}</p>
+          ) : null}
         </section>
       ) : null}
 
       {/* Bank details + signature */}
-      <section className="grid grid-cols-2 border-t border-slate-900 pt-3 text-xs print:break-inside-avoid">
+      {/* No print:break-inside-avoid here deliberately: forcing this whole
+          block onto one page pushed it, in full, to an otherwise-empty
+          trailing page when it didn't quite fit the remaining space on the
+          page before it. A split inside this short block is a smaller
+          cosmetic cost than a near-blank page. */}
+      <section className="grid grid-cols-2 border-t border-slate-900 pt-3 text-xs">
         <div>
           {hasBankDetails ? (
-            <>
+            <div className="print:break-inside-avoid">
               <p className="mb-1 font-semibold">Bank Details</p>
               <p>A/c Holder&apos;s Name: {company?.bankAccountName ?? "-"}</p>
               <p>Bank Name: {company?.bankName ?? "-"}</p>
               <p>A/c No.: {company?.bankAccountNumber ?? "-"}</p>
               <p>Branch &amp; IFS Code: {company?.bankIfsc ?? "-"}</p>
-            </>
+            </div>
           ) : null}
           {company?.gstin ? <p className="mt-2">GSTIN: {company.gstin}</p> : null}
           {company?.pan ? <p>PAN: {company.pan}</p> : null}

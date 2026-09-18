@@ -366,6 +366,70 @@ solar "project report" proposal) was used to restyle the Quotation print view
   document (matching the multi-page reference), so - unlike the invoice - no attempt was made to force
   it onto one printed page; `print:break-inside-avoid` was still added to the spec tables/summary
   box/footer so a page break (if one occurs) doesn't land mid-table.
+- Two follow-up polish fixes landed as their own commits: the system-summary box left an empty padded
+  gap and an awkward "…SYSTEM" suffix for non-power-system quotation types (fixed to hide the empty
+  grid and only append "SYSTEM" for solar/DG/battery-inverter types); the "Technical Details" heading
+  rendered even with zero technical data filled in (fixed to hide the whole section, not just the
+  tables under it, when empty).
+
+## Post-baseline change: On-Grid Solar proposal content (Phase A)
+
+A large, explicit "audit first, then implement Phase A only" request (a second reference document,
+the on-grid twin of the off-grid one used for the invoice/quotation layout work above). Delivered a
+written architecture audit + gap analysis + file-level plan before touching any code, per the user's
+explicit "do not code yet" instruction; user chose "keep browser print" (no server-side PDF dependency)
+and "Phase A only" (no product-master linkage, no structured payment-milestone table) from two
+`AskUserQuestion` prompts before implementation began.
+
+- **Schema (additive)**: `Company.proposalContentJson` (company-wide default narrative) and two new
+  `Quotation` columns - `billingAddressText` (snapshot, mirrors `Invoice.billingAddressText` exactly)
+  and `proposalContentJson` (per-quotation snapshot of the company default, independently editable
+  afterward - same pattern as the existing `termsAndConditions`/`defaultQuotationTerms` pair).
+  `technicalConfigJson` gained three more keys (`projectType`, `areaAvailable`, `siteSurveyStatus` -
+  "Design Inputs") with no schema change, since that field already exists exactly for this purpose.
+- **`src/lib/energy/quotations/proposal-content.ts`** (new, deliberately *not* `"use client"`): the
+  `ProposalContentValues` type and `parseProposalContent()` parser, callable from server components.
+  A real bug was caught and fixed here during testing: these were first defined inside the
+  `"use client"` `proposal-content-fields.tsx`, which crashed every server component that tried to
+  call `parseProposalContent()` directly ("Attempted to call parseProposalContent() from the server") -
+  a client-module export can be used as a component/prop from a server component, never invoked as a
+  plain function. Moved to a plain module; the client component now imports the type from it.
+- **`src/components/quotations/proposal-content-fields.tsx`** (new, shared): Company Introduction,
+  Vision/Mission/How We Perceive Ourselves, and six named clauses (Delivery/Inspection/Cancellation/
+  Demurrage/Warranty/Force Majeure) - one component reused by both Settings -> Company (company-wide
+  defaults) and the Quotation form (per-quotation override, pre-filled from those defaults).
+- **Quotation print view**: added the client's billing address, a "Company Introduction" paragraph
+  and "Our Corporate Philosophy" section (Vision/Mission/How We Perceive Ourselves - shown for any
+  quotation type, not just solar, since this narrative content isn't equipment-specific), a "Design
+  Inputs" table inside Technical Details (solar-gated, alongside the existing spec tables), the six
+  named clauses under Terms & Conditions (rendered above the existing free-text field, not replacing
+  it), and "Amount in Words" under the Grand Total (reusing the `amountInWords()` helper already built
+  for the invoice work - this had been missed in the first quotation-layout pass).
+- **Pagination fixes found during visual QA** (a full PDF export of a realistic `ON_GRID_SOLAR`
+  quotation - "Mr. Navneet Singh", 555 Wp x 18 modules, 10 kW inverter, per the user's test-data
+  spec): the bank-details/signature footer's `print:break-inside-avoid` pushed the *entire* block to
+  an otherwise near-blank trailing page when it didn't quite fit the remaining space on the page
+  before it; removed that block-level guard and applied a tighter one to just the small "Bank
+  Details" paragraph group instead. Separately, the "Technical Details" heading was getting orphaned
+  alone at the bottom of a page with all its content starting the next page; fixed with
+  `print:break-after-avoid` on that heading and on "Our Corporate Philosophy".
+- **Regression-tested** the full existing conversion chain end-to-end after these changes: Quotation
+  (Duplicate, Create Revision - both correctly carry the two new fields forward) -> approve -> Create
+  Sales Order -> Confirm -> Create Invoice -> Mark as Issued. One real thing this surfaced along the
+  way: confirming the test Sales Order initially failed with a genuine, pre-existing, correct
+  application error ("insufficient stock") because earlier test data in this same session had already
+  reserved all available stock of the test products - not a regression, just this session's demo data
+  needing a top-up (`Stock In`) before the chain could be re-verified end to end. The resulting
+  invoice's own print view (CGST/SGST split, totals) was double-checked and is unaffected by any of
+  this work.
+- **Known limitations / explicitly deferred** (see the audit's Gap Analysis for the full reasoning):
+  no separate cover/branding "pages" (single continuous document, browser-print architecture);
+  Company Introduction/Philosophy/named clauses are free text, not a rich template system; no
+  product-master-linked spec snapshotting or wattage-vs-capacity mismatch warning; no structured,
+  percentage-validated payment-milestone table (still a single free-text `paymentTerms` field); no
+  multi-bank-account support; the CGST/SGST/IGST tax breakdown built for the Invoice print view was
+  **not** ported to the Quotation print view, which still shows one blended "GST / Tax" figure - out
+  of this round's agreed Phase A scope, flagged rather than silently included or silently skipped.
 
 ## Recommended next phase
 

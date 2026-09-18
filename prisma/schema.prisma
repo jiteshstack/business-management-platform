@@ -24,6 +24,13 @@ model Company {
   // Reusable default quotation terms — each quotation snapshots this text at
   // creation time, so editing it later never changes an existing quotation.
   defaultQuotationTerms String?
+  // Reusable proposal narrative — company introduction, corporate philosophy
+  // (vision/mission/how we perceive ourselves), and named standard clauses
+  // (delivery/inspection/cancellation/demurrage/warranty/force majeure), one
+  // JSON blob for the same reason technicalConfigJson is: a fixed but
+  // heterogeneous set of long-form text blocks, not worth a column each.
+  // Each quotation snapshots this at creation time (see Quotation.proposalContentJson).
+  proposalContentJson String?
 
   // Statutory / print profile — used on printed documents (tax invoices, …).
   // All optional: nothing forces these to be filled in before the app is
@@ -467,9 +474,10 @@ model Quotation {
   rootQuotationId  String? // self-relation: null on the original; points to the original on every revision
   isLatestRevision Boolean @default(true)
 
-  clientId        String
-  siteAddressId   String?
-  siteAddressText String? // snapshot — stays readable even if the address is later edited/deleted
+  clientId           String
+  siteAddressId      String?
+  siteAddressText    String? // snapshot — stays readable even if the address is later edited/deleted
+  billingAddressText String? // snapshot of the client's billing address at creation time (mirrors Invoice.billingAddressText)
 
   type   String // ON_GRID_SOLAR | OFF_GRID_SOLAR | HYBRID_SOLAR | DIESEL_GENERATOR | BATTERY_INVERTER | EQUIPMENT_SUPPLY | INSTALLATION_SERVICE | AMC_MAINTENANCE | CUSTOM
   status String @default("DRAFT")
@@ -487,6 +495,12 @@ model Quotation {
   // columns — this is deliberately not an engineering calculator, just a
   // free-form spec sheet attached to the quote.
   technicalConfigJson String?
+
+  // Snapshot of Company.proposalContentJson at creation time, independently
+  // editable per quotation from then on (same pattern as termsAndConditions
+  // below) — so a later change to the company default never rewrites an
+  // already-created quotation's proposal text.
+  proposalContentJson String?
 
   paymentTerms         String?
   equipmentWarranty    String?

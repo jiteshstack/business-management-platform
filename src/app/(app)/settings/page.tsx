@@ -12,7 +12,7 @@ import {
   setUnitActiveAction,
 } from "@/lib/energy/inventory/actions";
 import { updateDefaultQuotationTermsAction } from "@/lib/energy/quotations/actions";
-import { updateCompanyProfileAction } from "@/lib/core/company/actions";
+import { updateCompanyProfileAction, updateProposalContentAction } from "@/lib/core/company/actions";
 import { listExpenseCategories } from "@/lib/energy/expenses/queries";
 import { createExpenseCategoryAction, setExpenseCategoryActiveAction } from "@/lib/energy/expenses/actions";
 import { PageHeader } from "@/components/shared/page-header";
@@ -21,6 +21,8 @@ import { SettingsTabs, isSettingsTabKey, type SettingsTabKey } from "@/component
 import { MasterDataManager } from "@/components/settings/master-data-manager";
 import { DefaultQuotationTermsForm } from "@/components/settings/default-quotation-terms-form";
 import { CompanyProfileForm } from "@/components/settings/company-profile-form";
+import { ProposalContentForm } from "@/components/settings/proposal-content-form";
+import { parseProposalContent } from "@/lib/energy/quotations/proposal-content";
 
 export default async function Page({
   searchParams,
@@ -75,6 +77,7 @@ async function CompanyTab({ companyId }: { companyId: string }) {
         action={updateDefaultQuotationTermsAction}
         defaultValue={company?.defaultQuotationTerms ?? ""}
       />
+      <ProposalContentForm action={updateProposalContentAction} defaultValues={parseProposalContent(company?.proposalContentJson)} />
       <EmptyState
         title="More coming later"
         description="Users, roles, and further document numbering settings are planned for a later phase."

@@ -58,3 +58,33 @@ export async function updateCompanyProfileAction(
   revalidatePath("/settings");
   return { attempt: nextAttempt(_prevState) };
 }
+
+export async function updateProposalContentAction(
+  _prevState: FormActionState,
+  formData: FormData
+): Promise<FormActionState> {
+  const session = await requireSession();
+  if (session.role !== "OWNER_ADMIN") {
+    return { error: "Only Owner/Admin can change proposal content." };
+  }
+
+  // Free-form JSON, same trust boundary as technicalConfigJson elsewhere in
+  // the Quotation module — it's rendered as plain text, never interpreted.
+  const proposalContentJson = str(formData, "proposalContentJson") ?? "{}";
+
+  await prisma.company.update({
+    where: { id: session.companyId },
+    data: { proposalContentJson },
+  });
+
+  await recordAudit({
+    companyId: session.companyId,
+    userId: session.userId,
+    action: "COMPANY_PROPOSAL_CONTENT_UPDATED",
+    entityType: "Company",
+    entityId: session.companyId,
+  });
+
+  revalidatePath("/settings");
+  return { attempt: nextAttempt(_prevState) };
+}

@@ -51,6 +51,24 @@ export function TechnicalConfigSection({
           </div>
 
           <div>
+            <SectionHeading>Design Inputs</SectionHeading>
+            <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field id="projectType" label="Project Type" value={values.projectType ?? ""} onChange={set("projectType")} />
+              <Field id="areaAvailable" label="Area Available" value={values.areaAvailable ?? ""} onChange={set("areaAvailable")} />
+              <div className="sm:col-span-2">
+                <Label htmlFor="siteSurveyStatus">Site Survey Status</Label>
+                <Textarea
+                  id="siteSurveyStatus"
+                  rows={2}
+                  value={values.siteSurveyStatus ?? ""}
+                  onChange={(e) => set("siteSurveyStatus")(e.target.value)}
+                  placeholder="e.g. Site survey not yet complete; system specification and price may change based on site survey."
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
             <SectionHeading>Solar PV Module</SectionHeading>
             <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field id="moduleManufacturer" label="Manufacturer" value={values.moduleManufacturer ?? ""} onChange={set("moduleManufacturer")} />

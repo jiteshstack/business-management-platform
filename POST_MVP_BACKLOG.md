@@ -54,6 +54,24 @@ unless they're a P0/P1 fix to something already promised in the MVP (see
 - Advanced warehouse management (bin-level tracking, multi-step putaway)
 - Bulk data import tooling (customers/vendors/products/opening balances)
 
+## Quotations / Proposals (Phase B - deferred from the On-Grid Solar proposal work)
+
+- Product-Master-linked module/inverter/mounting specs with snapshot-on-finalize (specs currently
+  live as free-text `technicalConfigJson` per quotation, not pulled from a spec-bearing product
+  record)
+- Wattage x quantity vs. system-capacity mismatch warning (validation only - never silently
+  auto-correct a user-entered value)
+- Structured, percentage-validated payment-milestone table (description + % + due condition,
+  summing to 100%) instead of the current single free-text `paymentTerms` field
+- Multiple bank accounts (Company currently has exactly one set of bank fields)
+- CGST/SGST/IGST tax breakdown on the Quotation print view (already built for the Invoice print
+  view - `splitTax()` in `invoice-print-view.tsx` - just not ported to quotations this round)
+- Distinct cover/branding "pages" with running headers/footers/page numbers on every physical PDF
+  page - requires server-side PDF rendering (Puppeteer/Playwright/pdf library), a new dependency
+  the user explicitly chose not to add when asked; revisit if that trade-off changes
+- Rich template system for Company Introduction / Corporate Philosophy / named clauses (currently
+  plain free-text fields, no versioning or per-clause history)
+
 ## Platform
 
 - User self-service management UI (create/edit/deactivate users from within the app, rather than

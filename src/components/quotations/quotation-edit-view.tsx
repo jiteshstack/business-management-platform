@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { QuotationForm, type ClientOption } from "./quotation-form";
+import { parseProposalContent } from "@/lib/energy/quotations/proposal-content";
 import type { ProductOption } from "@/components/shared/line-items-editor";
 import type { LineItemRow } from "@/components/shared/line-items-editor";
 
@@ -114,6 +115,7 @@ export async function QuotationEditView({ id }: { id: string }) {
           discountPercent: quotation.discountPercent,
           otherCharges: quotation.otherCharges,
           technicalConfig,
+          proposalContent: parseProposalContent(quotation.proposalContentJson),
           items: itemRows,
         }}
       />

@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { QUOTATION_TYPES, QUOTATION_TYPE_LABELS, type QuotationType } from "@/lib/energy/quotations/types";
 import { LineItemsEditor, computeLineTotal, type ProductOption, type LineItemRow } from "@/components/shared/line-items-editor";
 import { TechnicalConfigSection } from "./technical-config-section";
+import { ProposalContentFields, type ProposalContentValues } from "./proposal-content-fields";
 
 const initialState: FormActionState = {};
 
@@ -40,6 +41,7 @@ type QuotationFormDefaults = {
   discountPercent?: number | null;
   otherCharges?: number | null;
   technicalConfig?: Record<string, string>;
+  proposalContent?: ProposalContentValues;
   items?: LineItemRow[];
 };
 
@@ -75,6 +77,7 @@ export function QuotationForm({
   salespeople,
   defaults,
   companyDefaultTerms,
+  companyProposalContent,
   cancelHref,
 }: {
   mode: "create" | "edit";
@@ -84,6 +87,7 @@ export function QuotationForm({
   salespeople: { id: string; name: string }[];
   defaults?: QuotationFormDefaults;
   companyDefaultTerms?: string | null;
+  companyProposalContent?: ProposalContentValues;
   cancelHref: string;
 }) {
   const [state, formAction, isPending] = useActionState(action, initialState);
@@ -278,6 +282,22 @@ export function QuotationForm({
           <Field id="installationTimeline" label="Installation Timeline" error={fieldErrors.installationTimeline}>
             <Input id="installationTimeline" name="installationTimeline" defaultValue={value("installationTimeline") || defaults?.installationTimeline || ""} />
           </Field>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Proposal Content</CardTitle>
+          <p className="mt-1 text-xs font-normal text-slate-500">
+            Company introduction, corporate philosophy, and standard clauses shown on the printed quotation.
+            Pre-filled from Settings and editable per quotation.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <ProposalContentFields
+            hiddenFieldName="proposalContentJson"
+            initialValues={defaults?.proposalContent ?? companyProposalContent}
+          />
         </CardContent>
       </Card>
 

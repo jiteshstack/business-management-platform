@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db/client";
 import { createQuotationAction } from "@/lib/energy/quotations/actions";
 import { PageHeader } from "@/components/shared/page-header";
 import { QuotationForm, type ClientOption } from "./quotation-form";
+import { parseProposalContent } from "@/lib/energy/quotations/proposal-content";
 import type { ProductOption } from "@/components/shared/line-items-editor";
 
 export async function QuotationCreateView() {
@@ -52,6 +53,7 @@ export async function QuotationCreateView() {
         products={productOptions}
         salespeople={users}
         companyDefaultTerms={company?.defaultQuotationTerms}
+        companyProposalContent={parseProposalContent(company?.proposalContentJson)}
         cancelHref="/sales/quotations"
       />
     </div>
