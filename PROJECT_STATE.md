@@ -423,13 +423,54 @@ and "Phase A only" (no product-master linkage, no structured payment-milestone t
   invoice's own print view (CGST/SGST split, totals) was double-checked and is unaffected by any of
   this work.
 - **Known limitations / explicitly deferred** (see the audit's Gap Analysis for the full reasoning):
-  no separate cover/branding "pages" (single continuous document, browser-print architecture);
   Company Introduction/Philosophy/named clauses are free text, not a rich template system; no
   product-master-linked spec snapshotting or wattage-vs-capacity mismatch warning; no structured,
   percentage-validated payment-milestone table (still a single free-text `paymentTerms` field); no
   multi-bank-account support; the CGST/SGST/IGST tax breakdown built for the Invoice print view was
   **not** ported to the Quotation print view, which still shows one blended "GST / Tax" figure - out
   of this round's agreed Phase A scope, flagged rather than silently included or silently skipped.
+  (The "no separate cover/branding pages" limitation noted here originally no longer applies to
+  Solar quotations - see the 8-page rewrite immediately below; it still applies to every other
+  quotation type, which keeps the compact continuous layout.)
+
+## Post-baseline change: 8-page Solar proposal layout (literal reference reproduction)
+
+A third, much stricter round on the same reference material: the user explicitly asked for a
+*literal* visual reproduction of the on-grid reference document's page-by-page structure (repeated
+letterhead, forced page breaks, an 8-page flow), not the "structural reference only" interpretation
+the two rounds above used - and explicitly required a written analysis before any code, which was
+delivered and confirmed via two `AskUserQuestion` prompts before implementation.
+
+- **Forensic finding #1**: the reference `.doc` has **no embedded logo images anywhere** - verified
+  two ways (converting to `.docx` and inspecting for image relationships: none; scanning the raw
+  binary for PNG signatures: found 9, every one a ~1-2KB generic Word "embedded object" placeholder
+  icon, not a brand mark). Its letterhead is plain formatted text. The user chose text-only for the
+  "Kirloskar" side (no fabricated trademark graphic); the existing `public/logo.png` (Shanvi
+  Enterprises "SE" mark, already used in the sidebar/login page) is used on the cover page.
+- **Forensic finding #2**: the source's "8 pages" are mostly a Word pagination artifact - the same
+  letterhead block repeats ~7 times through the raw text, which is what actually produces the page
+  count, not 8 deliberately-designed unique pages. Confirmed and reproduced deliberately: the new
+  layout repeats a `Letterhead` component at the top of pages 2-8.
+- **`quotation-print-view.tsx` now branches by type**: `ON_GRID_SOLAR` / `OFF_GRID_SOLAR` /
+  `HYBRID_SOLAR` render a new `EightPageSolarProposal` (forced `print:break-before-page` per section:
+  cover / letterhead-only branding page / intro letter / corporate philosophy / commercial+payment+
+  bank / terms & conditions / design inputs+technical details / installation included+excluded).
+  Every other quotation type is completely unaffected - still the compact continuous layout from the
+  previous two rounds (verified by re-screenshotting the existing `EQUIPMENT_SUPPLY` test quotation).
+  No schema changes - reuses every field added in the Phase A round above.
+- Forced page breaks use plain CSS (`break-before: page`, Tailwind `break-before-page`) - fully
+  supported by Chrome in both interactive print and headless PDF export, so this still required
+  **zero new dependencies**, consistent with the browser-print architecture used everywhere else in
+  the app. This is a different CSS property from repeated running headers/page-numbers (which do
+  need a new PDF engine and which the user already chose to skip in the prior round) - forcing a
+  page break at a specific element doesn't have that limitation.
+- A `PageDivider` (`print:hidden`) marks where each forced break falls in the on-screen preview only,
+  so it's easy to see the page plan while editing without affecting the printed/PDF output.
+- Verified with a full 8-page PDF export of the real `Navneet Singh` / 10 kW / 555 Wp x 18 / 10 kW
+  test quotation from the prior rounds (including its revision, to confirm the snapshot fields still
+  carry through): all 8 pages present, correct dynamic title ("10 kW ON-GRID", never the reference's
+  own erroneous "20 KW"), no clipping/overlap, letterhead correctly repeated, logo correctly placed
+  only on the cover.
 
 ## Recommended next phase
 
