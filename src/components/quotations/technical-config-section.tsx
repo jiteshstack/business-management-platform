@@ -202,6 +202,169 @@ export function TechnicalConfigSection({
           </div>
 
           <div>
+            <SectionHeading>Warranty &amp; Service</SectionHeading>
+            <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field
+                id="dgFreeServiceChecks"
+                label="Free Service Checks"
+                value={values.dgFreeServiceChecks ?? ""}
+                onChange={set("dgFreeServiceChecks")}
+                placeholder="e.g. 3 free service checks during the warranty period through an authorized service centre"
+              />
+            </div>
+            <div className="mt-4">
+              <Label htmlFor="dgWarrantyConditions">Standard Warranty Conditions (one per line)</Label>
+              <Textarea
+                id="dgWarrantyConditions"
+                rows={4}
+                value={values.dgWarrantyConditions ?? ""}
+                onChange={(e) => set("dgWarrantyConditions")(e.target.value)}
+                placeholder="e.g. Proper installation of the DG set is the sole responsibility of the owner or user."
+              />
+            </div>
+          </div>
+
+          <div>
+            <SectionHeading>Commercial Terms &amp; Conditions (DG-specific)</SectionHeading>
+            <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="dgTcPrices">1. Prices</Label>
+                <Textarea
+                  id="dgTcPrices"
+                  rows={2}
+                  value={values.dgTcPrices ?? ""}
+                  onChange={(e) => set("dgTcPrices")(e.target.value)}
+                  placeholder="e.g. Price quoted is at site. Prices applicable at the time of delivery will only apply."
+                />
+              </div>
+              <div>
+                <Label htmlFor="dgTcFreightInsurance">2. Freight &amp; Transit Insurance</Label>
+                <Textarea
+                  id="dgTcFreightInsurance"
+                  rows={2}
+                  value={values.dgTcFreightInsurance ?? ""}
+                  onChange={(e) => set("dgTcFreightInsurance")(e.target.value)}
+                  placeholder="e.g. All prices are inclusive of freight charges. Transit insurance is customer's liability."
+                />
+              </div>
+              <div>
+                <Label htmlFor="dgTcGst">3. GST</Label>
+                <Textarea
+                  id="dgTcGst"
+                  rows={2}
+                  value={values.dgTcGst ?? ""}
+                  onChange={(e) => set("dgTcGst")(e.target.value)}
+                  placeholder="e.g. GST will be charged extra as applicable."
+                />
+              </div>
+              <div>
+                <Label htmlFor="dgTcDelivery">4. Delivery</Label>
+                <Textarea
+                  id="dgTcDelivery"
+                  rows={2}
+                  value={values.dgTcDelivery ?? ""}
+                  onChange={(e) => set("dgTcDelivery")(e.target.value)}
+                  placeholder="e.g. Prompt delivery provided advance payment has been made for the standard genset."
+                />
+              </div>
+              <div>
+                <Label htmlFor="dgTcPaymentTerms">5. Payment Terms</Label>
+                <Textarea
+                  id="dgTcPaymentTerms"
+                  rows={2}
+                  value={values.dgTcPaymentTerms ?? ""}
+                  onChange={(e) => set("dgTcPaymentTerms")(e.target.value)}
+                  placeholder="e.g. 30% advance (non-refundable) at the time of order, balance 70% prior to dispatch."
+                />
+              </div>
+              <div>
+                <Label htmlFor="dgTcOfferValidity">6. Offer Validity</Label>
+                <Textarea
+                  id="dgTcOfferValidity"
+                  rows={2}
+                  value={values.dgTcOfferValidity ?? ""}
+                  onChange={(e) => set("dgTcOfferValidity")(e.target.value)}
+                  placeholder="e.g. Offer is valid for 10 days from the date of the quotation."
+                />
+              </div>
+              <div>
+                <Label htmlFor="dgTcStatutoryVariations">7. Statutory Variations</Label>
+                <Textarea
+                  id="dgTcStatutoryVariations"
+                  rows={2}
+                  value={values.dgTcStatutoryVariations ?? ""}
+                  onChange={(e) => set("dgTcStatutoryVariations")(e.target.value)}
+                  placeholder="e.g. Any change in taxes/duties levied by the government shall be applicable."
+                />
+              </div>
+              <div>
+                <Label htmlFor="dgTcExclusions">8. Exclusions</Label>
+                <Textarea
+                  id="dgTcExclusions"
+                  rows={2}
+                  value={values.dgTcExclusions ?? ""}
+                  onChange={(e) => set("dgTcExclusions")(e.target.value)}
+                  placeholder="e.g. Excludes unloading, erection, earthing, power cabling, diesel and test load."
+                />
+              </div>
+              <div>
+                <Label htmlFor="dgTcInstallationCommissioning">9. Installation &amp; Commissioning</Label>
+                <Textarea
+                  id="dgTcInstallationCommissioning"
+                  rows={2}
+                  value={values.dgTcInstallationCommissioning ?? ""}
+                  onChange={(e) => set("dgTcInstallationCommissioning")(e.target.value)}
+                  placeholder="e.g. Bill of quantity is in line with current site conditions and may vary."
+                />
+              </div>
+              <div>
+                <Label htmlFor="dgTcForceMajeure">10. Force Majeure</Label>
+                <Textarea
+                  id="dgTcForceMajeure"
+                  rows={2}
+                  value={values.dgTcForceMajeure ?? ""}
+                  onChange={(e) => set("dgTcForceMajeure")(e.target.value)}
+                  placeholder="e.g. Not liable for damages arising from force majeure conditions."
+                />
+              </div>
+              <div>
+                <Label htmlFor="dgTcStorageInterest">11. Storage &amp; Interest Charges</Label>
+                <Textarea
+                  id="dgTcStorageInterest"
+                  rows={2}
+                  value={values.dgTcStorageInterest ?? ""}
+                  onChange={(e) => set("dgTcStorageInterest")(e.target.value)}
+                  placeholder="e.g. Standard storage charges and inventory burden apply if delivery is delayed."
+                />
+              </div>
+              <div>
+                <Label htmlFor="dgTcArbitration">12. Arbitration</Label>
+                <Textarea
+                  id="dgTcArbitration"
+                  rows={2}
+                  value={values.dgTcArbitration ?? ""}
+                  onChange={(e) => set("dgTcArbitration")(e.target.value)}
+                  placeholder="e.g. Disputes shall be referred to Arbitration, proceedings to be held at [city]."
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <SectionHeading>Authorized Dealer / Channel Partner Certificate</SectionHeading>
+            <div className="mt-2">
+              <Label htmlFor="dgCertificateText">Certificate Text (last page - leave blank to omit)</Label>
+              <Textarea
+                id="dgCertificateText"
+                rows={3}
+                value={values.dgCertificateText ?? ""}
+                onChange={(e) => set("dgCertificateText")(e.target.value)}
+                placeholder="e.g. This is to certify that [Company] is an Authorized Channel Partner / Dealer of [Manufacturer] Diesel Generators."
+              />
+            </div>
+          </div>
+
+          <div>
             <Label htmlFor="dgNotes">Other Technical Notes</Label>
             <Textarea id="dgNotes" rows={2} value={values.notes ?? ""} onChange={(e) => set("notes")(e.target.value)} />
           </div>

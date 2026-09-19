@@ -584,6 +584,59 @@ in `technicalConfigJson`.
   existing Solar quotation (9 pages, unaffected) and one existing compact-layout `EQUIPMENT_SUPPLY`
   quotation (2 pages, unaffected) to confirm no regression from the new branch.
 
+## Post-baseline change: DG-specific commercial terms, warranty annexure, and certificate page
+
+Follow-up round to the DG proposal layout above, prompted by re-sharing the same 3 reference
+documents (On-Grid, Off-Grid, CPCB DG) for a fresh verification pass. The verification found 3/3
+PASS on structure/dynamic-data/print-quality, but flagged 2 known, already-logged content gaps in
+the DG layout - the user asked to close both, plus add the reference's Annexure 8 certificate page.
+
+- **Forensic finding on the certificate**: the reference's "Annexure 8: Authorized dealer
+  certificate" contains almost no reproducible text - just a heading, the company's GSTIN, and an
+  `EMBED AcroExch.Document.7` OLE object with placeholder text "INSERT YOUR LOGO" next to it. Carved
+  the embedded object directly out of the raw `.doc` binary (found via a `%PDF-` signature scan of
+  the file, same byte-scanning technique used for the earlier logo forensics) and rendered it - it
+  turned out to be nothing more than a close-up photo of the same Shanvi Enterprises logo already
+  baked into `quotation-letterhead.png`, not a distinct certificate artwork. So there is no separate
+  image asset to extract for this page (unlike the letterhead itself); the certificate is
+  functionally just a certifying statement plus the already-present letterhead/GSTIN.
+- **New `technical-config-section.tsx` fields**, all under the existing DG-only branch:
+  - "Warranty & Service": `dgFreeServiceChecks` (single-line) and `dgWarrantyConditions`
+    (multi-line bullet list) - richer than the single `warranty` field, matching the reference's
+    separate Annexure 5 (manufacturer warranty duration + free service-check entitlement + a
+    standard-conditions bullet list).
+  - "Commercial Terms & Conditions (DG-specific)": 12 new `dgTc*` textareas (Prices / Freight &
+    Transit Insurance / GST / Delivery / Payment Terms / Offer Validity / Statutory Variations /
+    Exclusions / Installation & Commissioning / Force Majeure / Storage & Interest Charges /
+    Arbitration), matching the reference's Annexure 4 clause-for-clause. Placeholders are drawn from
+    the reference's own clause wording since these are generic commercial/legal boilerplate (not
+    manufacturer marketing copy), but every field starts empty and only what the user actually types
+    is ever rendered.
+  - "Authorized Dealer / Channel Partner Certificate": one `dgCertificateText` free-text field for
+    the certifying statement itself (e.g. "This is to certify that [Company] is an Authorized
+    Channel Partner of [Manufacturer]...") - kept free-text and user-editable rather than
+    synthesized, consistent with the standing "don't hardcode brand-specific claims" principle,
+    since only the company itself can state who it's actually an authorized dealer for.
+- **`DgProposal` changes** in `quotation-print-view.tsx`:
+  - Page 5 (Commercial Terms & Conditions) now renders the 12 new `dgTc*` fields (numbered 1-12,
+    matching the reference) instead of reusing the 6 generic Solar-shared `standardClauses`. Falls
+    back to `standardClauses` only if none of the 12 DG-specific fields are filled, so quotations
+    created before this round still show something rather than an empty section.
+  - New Page 6, "Warranty Terms & Conditions": a dynamically-composed manufacturer-warranty sentence
+    (never hardcodes a manufacturer name - reads `config.dgManufacturer`), the free-service-checks
+    line, and a bulleted Standard Conditions list.
+  - Page 7 is the pre-existing Technical Details page, renumbered (was Page 6).
+  - New Page 8 (last page), "Authorized Channel Partner Certificate": renders `dgCertificateText`
+    plus the company's GSTIN. Gated on `dgCertificateText` being filled, so it's entirely optional.
+- **Verification**: `npx tsc --noEmit`, `npm run lint`, `npm run build` all clean. Updated the
+  existing DG test quotation (QTN-0013) via Playwright with real values for all new fields
+  (including all 12 commercial clauses, using the reference document's own clause text as a
+  starting point) and re-exported the PDF: now 8 pages (was 6), all 12 clauses fit on a single
+  Commercial T&C page with no overflow, Warranty/Technical Details/Certificate pages all render
+  cleanly with the letterhead correctly repeated and no clipping. Re-checked the existing On-Grid
+  Solar test quotation (still 8 pages) to confirm the Solar layout - untouched by this round - has
+  no regression.
+
 ## Recommended next phase
 
 There is no next development phase queued. Per the MVP freeze:

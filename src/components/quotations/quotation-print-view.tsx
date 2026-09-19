@@ -992,6 +992,35 @@ function DgProposal({
   );
   const hasRequirements = Boolean(config.amfRequired || config.synchronizationRequired || config.installationRequired);
 
+  // DG-specific 12-clause commercial terms (Prices / Freight & Transit Insurance / GST /
+  // Delivery / Payment Terms / Offer Validity / Statutory Variations / Exclusions /
+  // Installation & Commissioning / Force Majeure / Storage & Interest Charges / Arbitration) -
+  // a distinct, richer structure from the 6 generic named clauses shared with the Solar
+  // layout, since a real DG dealer proposal's commercial terms cover ground (freight,
+  // statutory variations, storage/interest, arbitration venue) that a Solar quotation's
+  // generic clauses don't. Falls back to the shared standardClauses if none of these
+  // DG-specific fields are filled, so older DG quotations captured before this field set
+  // existed still show something on this page.
+  const dgCommercialClauses: [string, string | undefined][] = [
+    ["1. Prices", config.dgTcPrices],
+    ["2. Freight & Transit Insurance", config.dgTcFreightInsurance],
+    ["3. GST", config.dgTcGst],
+    ["4. Delivery", config.dgTcDelivery],
+    ["5. Payment Terms", config.dgTcPaymentTerms],
+    ["6. Offer Validity", config.dgTcOfferValidity],
+    ["7. Statutory Variations", config.dgTcStatutoryVariations],
+    ["8. Exclusions", config.dgTcExclusions],
+    ["9. Installation & Commissioning", config.dgTcInstallationCommissioning],
+    ["10. Force Majeure", config.dgTcForceMajeure],
+    ["11. Storage & Interest Charges", config.dgTcStorageInterest],
+    ["12. Arbitration", config.dgTcArbitration],
+  ];
+  const filledDgClauses = dgCommercialClauses.filter((c): c is [string, string] => Boolean(c[1]));
+  const commercialClauses = filledDgClauses.length > 0 ? filledDgClauses : standardClauses;
+
+  const hasWarrantyAnnexure = Boolean(config.warranty || config.dgFreeServiceChecks || config.dgWarrantyConditions);
+  const hasCertificate = Boolean(config.dgCertificateText);
+
   return (
     <div className="mx-auto max-w-4xl bg-white p-4 text-[13px] text-slate-900 print:p-0">
       <div className="mb-3 flex items-center justify-end gap-2 print:hidden">
@@ -1122,14 +1151,14 @@ function DgProposal({
       </LetterheadPage>
 
       {/* PAGE 5 - Commercial terms & conditions */}
-      {standardClauses.length > 0 || quotation.termsAndConditions ? (
+      {commercialClauses.length > 0 || quotation.termsAndConditions ? (
         <>
           <PageDivider label="Page 5" />
           <LetterheadPage company={company} companyAddressLines={companyAddressLines}>
             <p className="mb-2 text-sm font-bold">Commercial Terms &amp; Conditions</p>
-            {standardClauses.length > 0 ? (
+            {commercialClauses.length > 0 ? (
               <div className="space-y-2 text-xs">
-                {standardClauses.map(([label, text]) => (
+                {commercialClauses.map(([label, text]) => (
                   <p key={label}>
                     <span className="font-semibold">{label} - </span>
                     <span className="whitespace-pre-wrap text-slate-700">{text}</span>
@@ -1144,10 +1173,35 @@ function DgProposal({
         </>
       ) : null}
 
-      {/* PAGE 6 - Technical details */}
-      {hasDgSpec || hasRequirements || config.notes ? (
+      {/* PAGE 6 - Warranty terms & conditions (a richer, dedicated annexure - not just
+          the single generic warranty field also shown in Technical Details below) */}
+      {hasWarrantyAnnexure ? (
         <>
           <PageDivider label="Page 6" />
+          <LetterheadPage company={company} companyAddressLines={companyAddressLines}>
+            <p className="mb-2 text-sm font-bold">Warranty Terms &amp; Conditions</p>
+            {config.warranty ? (
+              <p>
+                {config.dgManufacturer ? `${config.dgManufacturer} power` : "The"} generating sets
+                come with a warranty of {config.warranty} from the date of installation and
+                commissioning.
+              </p>
+            ) : null}
+            {config.dgFreeServiceChecks ? <p className="mt-2">{config.dgFreeServiceChecks}</p> : null}
+            {config.dgWarrantyConditions ? (
+              <div className="mt-3">
+                <p className="mb-1 font-semibold">Standard Conditions</p>
+                <MultilineList text={config.dgWarrantyConditions} />
+              </div>
+            ) : null}
+          </LetterheadPage>
+        </>
+      ) : null}
+
+      {/* PAGE 7 - Technical details */}
+      {hasDgSpec || hasRequirements || config.notes ? (
+        <>
+          <PageDivider label="Page 7" />
           <LetterheadPage company={company} companyAddressLines={companyAddressLines}>
             <p className="mb-2 text-sm font-bold">Technical Details</p>
             <SpecTable
@@ -1177,6 +1231,23 @@ function DgProposal({
               />
             ) : null}
             {config.notes ? <p className="mt-2 text-xs text-slate-600">{config.notes}</p> : null}
+          </LetterheadPage>
+        </>
+      ) : null}
+
+      {/* PAGE 8 - Authorized Channel Partner / Dealer Certificate (last page, per the
+          reference's own Annexure 8). The reference's certificate is just a heading plus
+          the company's own logo (already part of the letterhead artwork on every page) and
+          GSTIN - no separate certificate artwork exists to reproduce, so the certifying
+          statement itself is a free-text field the company edits per quotation rather than
+          hardcoded brand copy. */}
+      {hasCertificate ? (
+        <>
+          <PageDivider label="Page 8" />
+          <LetterheadPage company={company} companyAddressLines={companyAddressLines}>
+            <p className="mb-2 text-sm font-bold">Authorized Channel Partner Certificate</p>
+            <p className="whitespace-pre-wrap">{config.dgCertificateText}</p>
+            {company?.gstin ? <p className="mt-4 text-xs text-slate-600">GSTIN: {company.gstin}</p> : null}
           </LetterheadPage>
         </>
       ) : null}
