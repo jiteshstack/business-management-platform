@@ -12,10 +12,6 @@ import { PrintButton } from "@/components/shared/print-button";
 import { parseProposalContent, type ProposalContentValues } from "@/lib/energy/quotations/proposal-content";
 import { amountInWords } from "@/lib/energy/shared/amount-in-words";
 
-function labelize(key: string): string {
-  return key.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase());
-}
-
 type TechConfig = Record<string, string>;
 type QuotationWithRelations = NonNullable<Awaited<ReturnType<typeof getQuotationById>>>;
 type CompanyRecord = NonNullable<Awaited<ReturnType<typeof prisma.company.findUnique>>>;
@@ -207,6 +203,19 @@ export async function QuotationPrintView({ id }: { id: string }) {
         hasPhilosophy={hasPhilosophy}
         standardClauses={standardClauses}
         hasDesignInputs={hasDesignInputs}
+        companyAddressLines={companyAddressLines}
+      />
+    );
+  }
+
+  if (isDg) {
+    return (
+      <DgProposal
+        quotation={quotation}
+        company={company}
+        config={config}
+        proposal={proposal}
+        standardClauses={standardClauses}
         companyAddressLines={companyAddressLines}
       />
     );
@@ -497,18 +506,10 @@ export async function QuotationPrintView({ id }: { id: string }) {
           ) : null}
           {config.notes ? <p className="mt-2 text-xs text-slate-600">{config.notes}</p> : null}
         </section>
-      ) : isDg && genericConfigEntries.length > 0 ? (
-        <section className="mb-4">
-          <p className="mb-2 text-sm font-bold print:break-after-avoid">Technical Details</p>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
-            {genericConfigEntries.map(([key, value]) => (
-              <p key={key}>
-                <span className="text-slate-500">{labelize(key)}:</span> {value}
-              </p>
-            ))}
-          </div>
-        </section>
       ) : null}
+      {/* DG quotations never reach this compact layout - they get their own
+          DgProposal above - so there's no DG technical-details fallback
+          needed here anymore. */}
 
       {/* Payment terms, delivery & warranty */}
       <section className="mb-4 grid grid-cols-1 gap-6 text-xs sm:grid-cols-2">
@@ -941,6 +942,241 @@ function EightPageSolarProposal({
                 <MultilineList text={config.installationExcluded} ordered />
               </div>
             ) : null}
+          </LetterheadPage>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+// Letterhead-branded, page-by-page reproduction of a Diesel Generator (DG)
+// channel-partner proposal (a real dealer's "Proposal ... DG Set" letter,
+// organized as a cover letter plus numbered annexures for Investment
+// Details / Commercial Terms / Warranty / Technical spec). Structurally
+// different from the Solar proposal above - no separate title-page cover,
+// since the reference document itself opens directly with the letter - but
+// reuses the same letterhead, bank-details, and named-clause infrastructure.
+// Purely marketing/graphic annexures from the reference (company promise,
+// service network map, dealer certificate, company profile) have no
+// corresponding data in this app and were deliberately left out rather than
+// filled with invented content.
+function DgProposal({
+  quotation,
+  company,
+  config,
+  proposal,
+  standardClauses,
+  companyAddressLines,
+}: {
+  quotation: QuotationWithRelations;
+  company: CompanyRecord | null;
+  config: TechConfig;
+  proposal: ProposalContentValues;
+  standardClauses: [string, string][];
+  companyAddressLines: string[];
+}) {
+  const itemDiscountTotal = quotation.items.reduce((sum, item) => sum + item.discountAmount, 0);
+  const customerDisplayName = quotation.client.businessName || quotation.client.name;
+  const hasDgSpec = Boolean(
+    config.dgManufacturer ||
+      config.dgCapacityKva ||
+      config.phase ||
+      config.emissionNorm ||
+      config.dgModel ||
+      config.fuelType ||
+      config.alternatorMake ||
+      config.coolingType ||
+      config.panelType ||
+      config.enclosureType ||
+      config.warranty
+  );
+  const hasRequirements = Boolean(config.amfRequired || config.synchronizationRequired || config.installationRequired);
+
+  return (
+    <div className="mx-auto max-w-4xl bg-white p-4 text-[13px] text-slate-900 print:p-0">
+      <div className="mb-3 flex items-center justify-end gap-2 print:hidden">
+        <PrintButton />
+      </div>
+
+      {/* PAGE 1 - Letter */}
+      <LetterheadPage company={company} companyAddressLines={companyAddressLines} breakBefore={false}>
+        <p>Ref No.: {quotation.quotationNumber}</p>
+        <p>Date: {quotation.quotationDate.toLocaleDateString("en-IN")}</p>
+        <p className="mt-3">{customerDisplayName},</p>
+        {quotation.billingAddressText ? <p>{quotation.billingAddressText}</p> : null}
+        {quotation.client.gstin ? <p>GSTIN: {quotation.client.gstin}</p> : null}
+        <p className="mt-3">Dear Sir/Madam,</p>
+        {quotation.subject ? <p className="mt-2 font-medium">Subject: {quotation.subject}</p> : null}
+        {proposal.introduction ? (
+          <p className="mt-2 whitespace-pre-wrap text-slate-700">{proposal.introduction}</p>
+        ) : null}
+        {quotation.notes ? <p className="mt-2 whitespace-pre-wrap text-slate-700">{quotation.notes}</p> : null}
+        <p className="mt-4">Thanking you,</p>
+        <p>Yours faithfully,</p>
+        <div className="mt-2">
+          {quotation.salesperson ? <p>{quotation.salesperson.name}</p> : null}
+          <p>{company?.name ?? "Company"}</p>
+          {companyAddressLines.length > 0 ? <p>{companyAddressLines.join(", ")}</p> : null}
+          {company?.phone ? <p>Ph. No. {company.phone}</p> : null}
+        </div>
+      </LetterheadPage>
+
+      {/* PAGE 2 - Salient Features */}
+      {config.dgFeatures ? (
+        <>
+          <PageDivider label="Page 2" />
+          <LetterheadPage company={company} companyAddressLines={companyAddressLines}>
+            <p className="mb-2 text-sm font-bold">Salient Features</p>
+            <MultilineList text={config.dgFeatures} />
+          </LetterheadPage>
+        </>
+      ) : null}
+
+      {/* PAGE 3 - Investment details */}
+      <PageDivider label="Page 3" />
+      <LetterheadPage company={company} companyAddressLines={companyAddressLines}>
+        <p className="mb-2 text-sm font-bold">Investment Details</p>
+        <table className="w-full border-collapse text-xs">
+          <thead>
+            <tr className="border-b border-slate-900 text-left">
+              <th className="py-1">Description</th>
+              <th className="py-1">Qty</th>
+              <th className="py-1">Unit</th>
+              <th className="py-1 text-right">Rate</th>
+              <th className="py-1 text-right">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {quotation.items.map((item) => (
+              <tr key={item.id} className="border-b border-slate-100">
+                <td className="py-1">
+                  <p className="font-medium">{item.productName}</p>
+                  {item.description ? <p className="text-slate-500">{item.description}</p> : null}
+                </td>
+                <td className="py-1">{item.quantity}</td>
+                <td className="py-1">{item.unitLabel ?? "-"}</td>
+                <td className="py-1 text-right">{item.unitPrice.toLocaleString("en-IN")}</td>
+                <td className="py-1 text-right">{item.lineTotal.toLocaleString("en-IN")}</td>
+              </tr>
+            ))}
+            <tr>
+              <td className="py-0.5 text-slate-500" colSpan={3} />
+              <td className="py-0.5 text-right text-slate-500">Subtotal</td>
+              <td className="py-0.5 text-right">{quotation.subtotal.toLocaleString("en-IN")}</td>
+            </tr>
+            <tr>
+              <td className="py-0.5 text-slate-500" colSpan={3} />
+              <td className="py-0.5 text-right text-slate-500">Discounts</td>
+              <td className="py-0.5 text-right">-{itemDiscountTotal.toLocaleString("en-IN")}</td>
+            </tr>
+            {quotation.otherCharges ? (
+              <tr>
+                <td className="py-0.5 text-slate-500" colSpan={3} />
+                <td className="py-0.5 text-right text-slate-500">Freight / Other Charges</td>
+                <td className="py-0.5 text-right">{quotation.otherCharges.toLocaleString("en-IN")}</td>
+              </tr>
+            ) : null}
+            <tr>
+              <td className="py-0.5 text-slate-500" colSpan={3} />
+              <td className="py-0.5 text-right text-slate-500">GST / Tax</td>
+              <td className="py-0.5 text-right">{quotation.taxAmount.toLocaleString("en-IN")}</td>
+            </tr>
+            <tr className="border-t border-slate-900 font-semibold">
+              <td colSpan={3} />
+              <td className="py-1 text-right">TOTAL AMOUNT</td>
+              <td className="py-1 text-right">Rs. {quotation.grandTotal.toLocaleString("en-IN")}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p className="mt-1 text-right text-xs italic text-slate-600">
+          Amount in Words: INR {amountInWords(quotation.grandTotal)}
+        </p>
+
+        {config.dgTermsOfSupply ? (
+          <div className="mt-4 text-xs">
+            <p className="mb-1 font-semibold">Terms of Supply</p>
+            <MultilineList text={config.dgTermsOfSupply} />
+          </div>
+        ) : null}
+
+        <div className="mt-4 text-xs print:break-inside-avoid">
+          <p className="mb-1 font-semibold">Payment Terms -</p>
+          {quotation.paymentTerms ? (
+            <p className="whitespace-pre-wrap">{quotation.paymentTerms}</p>
+          ) : (
+            <p className="text-slate-400">-</p>
+          )}
+        </div>
+
+        <div className="mt-3 text-xs">
+          <p className="font-semibold">for {company?.name ?? "Company"}</p>
+        </div>
+      </LetterheadPage>
+
+      {/* PAGE 4 - Bank details + signature, on its own page from the start
+          (see the Solar layout's PROJECT_STATE.md note on why Bank Details
+          shouldn't share a page with a full commercial table). */}
+      <PageDivider label="Page 4" />
+      <LetterheadPage company={company} companyAddressLines={companyAddressLines}>
+        <BankDetailsBlock company={company} />
+      </LetterheadPage>
+
+      {/* PAGE 5 - Commercial terms & conditions */}
+      {standardClauses.length > 0 || quotation.termsAndConditions ? (
+        <>
+          <PageDivider label="Page 5" />
+          <LetterheadPage company={company} companyAddressLines={companyAddressLines}>
+            <p className="mb-2 text-sm font-bold">Commercial Terms &amp; Conditions</p>
+            {standardClauses.length > 0 ? (
+              <div className="space-y-2 text-xs">
+                {standardClauses.map(([label, text]) => (
+                  <p key={label}>
+                    <span className="font-semibold">{label} - </span>
+                    <span className="whitespace-pre-wrap text-slate-700">{text}</span>
+                  </p>
+                ))}
+              </div>
+            ) : null}
+            {quotation.termsAndConditions ? (
+              <p className="mt-2 whitespace-pre-wrap text-xs text-slate-700">{quotation.termsAndConditions}</p>
+            ) : null}
+          </LetterheadPage>
+        </>
+      ) : null}
+
+      {/* PAGE 6 - Technical details */}
+      {hasDgSpec || hasRequirements || config.notes ? (
+        <>
+          <PageDivider label="Page 6" />
+          <LetterheadPage company={company} companyAddressLines={companyAddressLines}>
+            <p className="mb-2 text-sm font-bold">Technical Details</p>
+            <SpecTable
+              title="DG Set Specification"
+              rows={[
+                ["Manufacturer / Brand", config.dgManufacturer],
+                ["Capacity", config.dgCapacityKva ? `${config.dgCapacityKva} kVA` : undefined],
+                ["Phase", config.phase],
+                ["Emission Norm", config.emissionNorm],
+                ["Engine Model", config.dgModel],
+                ["Fuel Type", config.fuelType],
+                ["Alternator Make", config.alternatorMake],
+                ["Cooling Type", config.coolingType],
+                ["Control Panel", config.panelType],
+                ["Enclosure", config.enclosureType],
+                ["Warranty", config.warranty],
+              ]}
+            />
+            {hasRequirements ? (
+              <SpecTable
+                title="Requirements"
+                rows={[
+                  ["AMF Requirement", config.amfRequired],
+                  ["Synchronization Requirement", config.synchronizationRequired],
+                  ["Installation Requirement", config.installationRequired],
+                ]}
+              />
+            ) : null}
+            {config.notes ? <p className="mt-2 text-xs text-slate-600">{config.notes}</p> : null}
           </LetterheadPage>
         </>
       ) : null}

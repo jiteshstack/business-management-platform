@@ -521,6 +521,69 @@ reconstructed text header - on every page of the quotation, not just the cover.
   fixed by moving Bank Details to its own page; a future instance in some other section would need
   the same manual treatment - there's no general fix within this architecture.
 
+## Post-baseline change: Diesel Generator (DG) proposal layout
+
+Follow-up round using a real dealer proposal (`CPCB-4 (57 to 160) KVA (2).doc`, a channel-partner
+DG quotation) as the reference, for the existing `DIESEL_GENERATOR` quotation type - which
+previously had no dedicated print layout and fell back to a generic key/value dump of whatever was
+in `technicalConfigJson`.
+
+- **Forensic reading of the reference** (`strings -n 6` on the legacy `.doc`, same toolchain as the
+  Solar rounds): a formal cover letter followed by 9 numbered Annexures (Our Promise, Salient
+  Features, Investment Details, Commercial T&C with 12 clauses, Warranty Terms, Service Networks,
+  Customer Solution Centre, Authorized Dealer Certificate, Company Profile). Also found the same
+  kind of internal inconsistency seen in the earlier on-grid reference ("20 KW" title vs. "10 kW"
+  body): this DG reference's Subject line says "125 kVA" while its own Investment Details line item
+  says "160 kVA." Confirms, again, that neither value may ever be hardcoded - capacity is always
+  read from the quotation's own `technicalConfigJson`.
+- **`technical-config-section.tsx`**: the DG field set was expanded from a flat, thin set (capacity,
+  model, fuel type, AMF/sync/installation, warranty, notes) to a structured one matching what the
+  reference document actually describes a DG line item as ("KIRLOSKAR 160 kVA 3Phase DG set with
+  Engine Model 6K1080ETA4G1 & coupled with KG-make Alternator Water Cooled with Standard Panel,
+  Acoustic Enclosure & Base frame"). Added under a "DG Set" heading: `dgManufacturer`, `phase`,
+  `emissionNorm`, `alternatorMake`, `coolingType`, `panelType`, `enclosureType` (existing
+  `dgCapacityKva`/`dgModel`/`fuelType`/`warranty` kept). Added two new free-text multi-line fields,
+  `dgFeatures` ("Salient Features") and `dgTermsOfSupply` ("Terms of Supply"), mirroring the
+  existing `installationIncluded`/`installationExcluded` free-text pattern from the Solar section
+  rather than inventing a new mechanism.
+- **`quotation-print-view.tsx`**: added a third top-level layout branch, `DgProposal`, alongside the
+  existing `EightPageSolarProposal` (for `isSolar`) and the compact continuous layout (everything
+  else). `DIESEL_GENERATOR` quotations now always render `DgProposal` and never reach the compact
+  layout, so the old DG-specific generic key/value dump branch (and the now-fully-unused `labelize`
+  helper it depended on) was deleted rather than left dead.
+- **`DgProposal` structure** - 6 letterhead-branded pages, all reusing the same `LetterheadPage` /
+  `BankDetailsBlock` / `SpecTable` / `MultilineList` / `standardClauses` / `proposal.introduction`
+  infrastructure built for Solar (no parallel architecture):
+  1. Cover letter - Ref No./Date, customer address, Subject (the quotation's own free-text
+     `subject` field - not auto-generated, since the reference's subject line is itself
+     free-form prose), `proposal.introduction`, closing signature.
+  2. Salient Features (conditional on `config.dgFeatures`).
+  3. Investment Details - reuses the existing line-items table/totals/amount-in-words rather than
+     inventing new commercial fields, plus Terms of Supply (conditional) and Payment Terms.
+  4. Bank Details + signature, given its **own dedicated page from the start** this time (not
+     discovered as a bug and fixed after the fact, as with Solar) - applying the lesson learned
+     twice already in this project: a commercial/line-items page plus bank details reliably
+     overflows a single `LetterheadPage`.
+  5. Commercial Terms & Conditions - reuses the same 6 named clauses + `termsAndConditions`
+     catch-all as Solar's T&C page, rather than building the reference's 12 distinct clause types
+     as new structured fields.
+  6. Technical Details - a `SpecTable` of all the DG fields plus the Requirements block (AMF/
+     synchronization/installation).
+  Deliberately **not built**: pages for the reference's purely marketing/graphic Annexures (Our
+  Promise, Service Networks, Customer Solution Centre, Authorized Dealer Certificate, Company
+  Profile) - none of them have corresponding dynamic data in the system, and building them would
+  mean hardcoding Kirloskar-specific marketing copy as if it were the application's own content,
+  which the user's own principle from the earlier Kirloskar-logo round already ruled out.
+- **Verification**: `npx tsc --noEmit`, `npm run lint`, and `npm run build` all clean. Created a
+  real end-to-end `DIESEL_GENERATOR` test quotation (QTN-0013) via Playwright using the reference's
+  actual values (KIRLOSKAR, 160 kVA, 3 Phase, CPCB IV+, engine model 6K1080ETA4G1, KG-make
+  alternator, Water Cooled, Standard Panel, Acoustic Enclosure, "2 years or 5000 hours, whichever is
+  earlier"), exported a real 6-page PDF, and read every page: letterhead correctly repeated on all
+  6 pages, no clipping/overlap/overflow anywhere, dynamic capacity/manufacturer correctly reflected
+  in the Subject line and Technical Details, no unstyled trailing pages. Also re-exported one
+  existing Solar quotation (9 pages, unaffected) and one existing compact-layout `EQUIPMENT_SUPPLY`
+  quotation (2 pages, unaffected) to confirm no regression from the new branch.
+
 ## Recommended next phase
 
 There is no next development phase queued. Per the MVP freeze:

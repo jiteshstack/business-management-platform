@@ -8,11 +8,23 @@ import { SOLAR_TYPES, DG_TYPES, type QuotationType } from "@/lib/energy/quotatio
 
 type ConfigValues = Record<string, string>;
 
-function Field({ id, label, value, onChange }: { id: string; label: string; value: string; onChange: (v: string) => void }) {
+function Field({
+  id,
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
   return (
     <div>
       <Label htmlFor={id}>{label}</Label>
-      <Input id={id} value={value} onChange={(e) => onChange(e.target.value)} />
+      <Input id={id} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
     </div>
   );
 }
@@ -140,15 +152,56 @@ export function TechnicalConfigSection({
       ) : null}
 
       {isDg ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field id="dgCapacityKva" label="DG Capacity (kVA)" value={values.dgCapacityKva ?? ""} onChange={set("dgCapacityKva")} />
-          <Field id="dgModel" label="DG Model" value={values.dgModel ?? ""} onChange={set("dgModel")} />
-          <Field id="fuelType" label="Fuel Type" value={values.fuelType ?? ""} onChange={set("fuelType")} />
-          <Field id="amfRequired" label="AMF Requirement" value={values.amfRequired ?? ""} onChange={set("amfRequired")} />
-          <Field id="synchronizationRequired" label="Synchronization Requirement" value={values.synchronizationRequired ?? ""} onChange={set("synchronizationRequired")} />
-          <Field id="installationRequired" label="Installation Requirement" value={values.installationRequired ?? ""} onChange={set("installationRequired")} />
-          <Field id="warranty" label="Warranty" value={values.warranty ?? ""} onChange={set("warranty")} />
-          <div className="sm:col-span-2">
+        <div className="space-y-5">
+          <div>
+            <SectionHeading>DG Set</SectionHeading>
+            <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field id="dgManufacturer" label="Manufacturer / Brand" value={values.dgManufacturer ?? ""} onChange={set("dgManufacturer")} />
+              <Field id="dgCapacityKva" label="DG Capacity (kVA)" value={values.dgCapacityKva ?? ""} onChange={set("dgCapacityKva")} />
+              <Field id="phase" label="Phase" value={values.phase ?? ""} onChange={set("phase")} placeholder="e.g. 3 Phase" />
+              <Field id="emissionNorm" label="Emission Norm" value={values.emissionNorm ?? ""} onChange={set("emissionNorm")} placeholder="e.g. CPCB IV+" />
+              <Field id="dgModel" label="Engine Model" value={values.dgModel ?? ""} onChange={set("dgModel")} />
+              <Field id="fuelType" label="Fuel Type" value={values.fuelType ?? ""} onChange={set("fuelType")} />
+              <Field id="alternatorMake" label="Alternator Make" value={values.alternatorMake ?? ""} onChange={set("alternatorMake")} />
+              <Field id="coolingType" label="Cooling Type" value={values.coolingType ?? ""} onChange={set("coolingType")} placeholder="e.g. Water Cooled" />
+              <Field id="panelType" label="Control Panel" value={values.panelType ?? ""} onChange={set("panelType")} placeholder="e.g. Standard Panel / AMF Panel" />
+              <Field id="enclosureType" label="Enclosure" value={values.enclosureType ?? ""} onChange={set("enclosureType")} placeholder="e.g. Acoustic Enclosure / Canopy" />
+              <Field id="warranty" label="Warranty" value={values.warranty ?? ""} onChange={set("warranty")} />
+            </div>
+          </div>
+
+          <div>
+            <SectionHeading>Requirements</SectionHeading>
+            <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field id="amfRequired" label="AMF Requirement" value={values.amfRequired ?? ""} onChange={set("amfRequired")} />
+              <Field id="synchronizationRequired" label="Synchronization Requirement" value={values.synchronizationRequired ?? ""} onChange={set("synchronizationRequired")} />
+              <Field id="installationRequired" label="Installation Requirement" value={values.installationRequired ?? ""} onChange={set("installationRequired")} />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="dgFeatures">Salient Features (one per line)</Label>
+            <Textarea
+              id="dgFeatures"
+              rows={4}
+              value={values.dgFeatures ?? ""}
+              onChange={(e) => set("dgFeatures")(e.target.value)}
+              placeholder="e.g. Best-in-class fuel efficiency and low lubricating oil consumption"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="dgTermsOfSupply">Terms of Supply (one per line)</Label>
+            <Textarea
+              id="dgTermsOfSupply"
+              rows={3}
+              value={values.dgTermsOfSupply ?? ""}
+              onChange={(e) => set("dgTermsOfSupply")(e.target.value)}
+              placeholder="e.g. Any civil work like DG foundation, cable trench, etc. falls within the customer's scope."
+            />
+          </div>
+
+          <div>
             <Label htmlFor="dgNotes">Other Technical Notes</Label>
             <Textarea id="dgNotes" rows={2} value={values.notes ?? ""} onChange={(e) => set("notes")(e.target.value)} />
           </div>

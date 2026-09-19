@@ -71,6 +71,13 @@ unless they're a P0/P1 fix to something already promised in the MVP (see
   the user explicitly chose not to add when asked; revisit if that trade-off changes
 - Rich template system for Company Introduction / Corporate Philosophy / named clauses (currently
   plain free-text fields, no versioning or per-clause history)
+- DG proposal marketing/graphic annexures (from the CPCB-4 DG reference round): "Our Promise",
+  Service Networks map, Customer Solution Centre, Authorized Dealer Certificate, Company Profile -
+  none have corresponding dynamic data in the system today, so they weren't built rather than
+  filling them with hardcoded brand-specific marketing copy
+- DG Commercial Terms currently reuses the same 6 generic named clauses as Solar (Delivery/
+  Inspection/Cancellation/Demurrage/Warranty/Force Majeure); the reference document's fuller
+  12-clause DG-specific commercial terms structure was not built as separate fields
 
 ## Platform
 
