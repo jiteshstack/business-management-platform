@@ -472,6 +472,55 @@ delivered and confirmed via two `AskUserQuestion` prompts before implementation.
   own erroneous "20 KW"), no clipping/overlap, letterhead correctly repeated, logo correctly placed
   only on the cover.
 
+## Post-baseline change: real letterhead artwork on every page
+
+Immediate follow-up to the 8-page rewrite above: the user supplied the company's actual letterhead
+file (`Shanvi_letter head.pdf`) and its constituent images, and asked for that exact artwork - not a
+reconstructed text header - on every page of the quotation, not just the cover.
+
+- **`public/quotation-letterhead.png`** (new asset): extracted directly from the supplied PDF with
+  PyMuPDF (`page.get_images()` + `doc.extract_image()`) at full quality (2544x3296 PNG) - the whole
+  letterhead turned out to be a single flattened image (logo top-left, "Kirloskar" mark top-right,
+  decorative copper/teal ribbon bottom-right all baked into one picture, not three separate
+  assets), confirmed by inspecting `page.get_images(full=True)` and finding exactly one image on
+  the page. Used as-is; nothing was redrawn or recreated.
+  Company text info (name/tagline/address/email/phone/website) isn't part of the artwork, so it's
+  still rendered as text underneath it, per page.
+- **`LetterheadPage`** (replaces the old text-only `Letterhead` component): a full physical page -
+  `backgroundSize: 100% 100%` over a `minHeight: 277mm` box (A4 content height after the existing
+  10mm `@page` margins) - with padding tuned to clear the artwork's logo band (top) and ribbon
+  (bottom): 40mm top / 35mm bottom, reached after two rounds of visual tuning (see below). Used on
+  every page of both the 8/9-page Solar layout *and* the compact continuous layout for every other
+  quotation type - the user asked for it applied to "the entire quotation," not just Solar.
+- **Two real overflow bugs found and fixed during visual QA** (both the same failure shape: a
+  `LetterheadPage`'s content exceeded the ~200mm usable height once top+bottom clearance is
+  subtracted from 277mm, so the overflow spilled onto a fresh physical page with **no background at
+  all** - CSS doesn't repeat a `background-image` across a forced page break, it only fills the one
+  box it's attached to):
+  1. On the Solar layout, Page 5 (commercial box + full line-items table + totals + payment terms +
+     bank details + signature) was too dense for one page. Fixed by giving Bank Details + signature
+     their own explicit page (now page 6; subsequent pages renumbered 7/8/9) rather than letting it
+     overflow uncontrolled - consistent with the "controlled page breaks, not accidental overflow"
+     principle the whole layout is built on.
+  2. The same shape of bug hit the compact (non-Solar) layout too, which wraps its entire body in a
+     single `LetterheadPage` with no internal page divisions - even a short quotation's trailing
+     "Standard terms and conditions apply." line spilled onto an unstyled page. Fixed the same way:
+     Bank Details + signature moved to their own dedicated `LetterheadPage`.
+  3. A third, smaller issue: the artwork's logo already has "SHANVI ENTERPRISES" text baked into it,
+     and the separately-rendered text heading directly beneath it initially sat too close (30mm
+     top padding) - visually crowded/near-overlapping, confirmed via a close-up screenshot crop, not
+     just the full-page PDF thumbnail. Fixed by increasing top padding to 40mm.
+- Bottom padding was iteratively reduced (was 62mm from a rough estimate of the ribbon's extent in
+  the source image, down to 35mm) once it became clear 62mm's estimate was too conservative -
+  verified after each reduction that the ribbon still never visually touches content on any of the
+  11 total pages checked (9 Solar + 2 compact) across this round.
+- **Known limitation, explicitly accepted rather than solved**: this is a fundamentally static,
+  CSS-only layout (per the standing "no new PDF dependency" decision) - a `LetterheadPage` whose
+  *own* content is long enough to exceed ~200mm (e.g., an unusually long Terms & Conditions or a
+  large BOQ) can still overflow onto an unstyled trailing page. The two known instances of this were
+  fixed by moving Bank Details to its own page; a future instance in some other section would need
+  the same manual treatment - there's no general fix within this architecture.
+
 ## Recommended next phase
 
 There is no next development phase queued. Per the MVP freeze:

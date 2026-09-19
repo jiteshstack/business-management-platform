@@ -57,22 +57,58 @@ function MultilineList({ text, ordered }: { text?: string; ordered?: boolean }) 
   );
 }
 
-// Repeated at the top of every page in the 8-page solar proposal layout,
-// matching the reference document's own running letterhead (the same block
-// re-appears at the start of nearly every physical page in the source).
-function Letterhead({ company, companyAddressLines }: { company: CompanyRecord | null; companyAddressLines: string[] }) {
+// The company's actual pre-designed letterhead artwork (logo top-left,
+// partner/dealer mark top-right, decorative motif bottom-right) - a single
+// flattened image, extracted at full quality from the company-supplied
+// letterhead PDF (not reconstructed/redrawn). Used as a full-bleed page
+// background so every page of the quotation carries the same letterhead a
+// physical piece of pre-printed stationery would, rather than a plain text
+// header on page 1 only.
+const LETTERHEAD_IMAGE_URL = "/quotation-letterhead.png";
+
+// Clearance below the artwork's logo band and above its bottom-right motif -
+// tuned by visually checking a rendered PDF against the source image, not
+// derived from the image's pixel geometry, so revisit if the artwork changes.
+const LETTERHEAD_PAGE_STYLE: React.CSSProperties = {
+  backgroundImage: `url(${LETTERHEAD_IMAGE_URL})`,
+  backgroundSize: "100% 100%",
+  backgroundRepeat: "no-repeat",
+  minHeight: "277mm",
+};
+
+// One physical page of the letterhead-branded document: the background
+// artwork plus the company's contact-details text (name/address/email/
+// phone/website aren't part of the artwork itself, so still rendered as
+// text), then whatever page-specific content is passed in as children.
+function LetterheadPage({
+  company,
+  companyAddressLines,
+  breakBefore = true,
+  children,
+}: {
+  company: CompanyRecord | null;
+  companyAddressLines: string[];
+  breakBefore?: boolean;
+  children: React.ReactNode;
+}) {
   return (
-    <header className="mb-4 border-b border-slate-900 pb-2 text-xs text-slate-700">
-      <p className="text-sm font-bold text-slate-900">{company?.name ?? "Company"}</p>
-      {company?.tagline ? <p>{company.tagline}</p> : null}
-      {companyAddressLines.length > 0 ? <p>{companyAddressLines.join(", ")}</p> : null}
-      <p>
-        {[company?.email ? `Email: ${company.email}` : null, company?.phone ? `Cell: ${company.phone}` : null]
-          .filter(Boolean)
-          .join("   ")}
-      </p>
-      {company?.website ? <p>Website: {company.website}</p> : null}
-    </header>
+    <div
+      className={breakBefore ? "relative print:break-before-page" : "relative"}
+      style={{ ...LETTERHEAD_PAGE_STYLE, paddingTop: "40mm", paddingBottom: "35mm", paddingLeft: "4mm", paddingRight: "4mm" }}
+    >
+      <header className="mb-4 border-b border-slate-900 pb-2 text-xs text-slate-700">
+        <p className="text-sm font-bold text-slate-900">{company?.name ?? "Company"}</p>
+        {company?.tagline ? <p>{company.tagline}</p> : null}
+        {companyAddressLines.length > 0 ? <p>{companyAddressLines.join(", ")}</p> : null}
+        <p>
+          {[company?.email ? `Email: ${company.email}` : null, company?.phone ? `Cell: ${company.phone}` : null]
+            .filter(Boolean)
+            .join("   ")}
+        </p>
+        {company?.website ? <p>Website: {company.website}</p> : null}
+      </header>
+      {children}
+    </div>
   );
 }
 
@@ -184,16 +220,7 @@ export async function QuotationPrintView({ id }: { id: string }) {
         <PrintButton />
       </div>
 
-      {/* Letterhead */}
-      <header className="mb-4 border-b-2 border-slate-900 pb-3 text-center">
-        <h1 className="text-xl font-bold">{company?.name ?? "Company"}</h1>
-        {company?.tagline ? <p className="text-sm font-medium text-slate-600">{company.tagline}</p> : null}
-        {companyAddressLines.length > 0 ? <p className="text-xs text-slate-500">{companyAddressLines.join(", ")}</p> : null}
-        <p className="text-xs text-slate-500">
-          {[company?.email, company?.phone, company?.website].filter(Boolean).join("  |  ")}
-        </p>
-      </header>
-
+      <LetterheadPage company={company} companyAddressLines={companyAddressLines} breakBefore={false}>
       {/* Title + reference */}
       <section className="mb-4 flex items-start justify-between text-sm">
         <div>
@@ -524,7 +551,14 @@ export async function QuotationPrintView({ id }: { id: string }) {
         </section>
       ) : null}
 
-      <BankDetailsBlock company={company} />
+      </LetterheadPage>
+
+      {/* Bank details get their own letterhead page rather than risking an
+          overflow onto an unstyled trailing page for longer quotations (see
+          the identical reasoning on the 8-page Solar layout below). */}
+      <LetterheadPage company={company} companyAddressLines={companyAddressLines}>
+        <BankDetailsBlock company={company} />
+      </LetterheadPage>
     </div>
   );
 }
@@ -537,11 +571,16 @@ const GRID_TYPE_WORDS: Partial<Record<QuotationType, string>> = {
 
 // Faithful, page-by-page reproduction of a reference on-grid/off-grid solar
 // EPC proposal document (a real dealer's own "Project Report" quotation
-// format) - deliberately laid out as 8 discrete, forced-page-break sections
-// with a repeated letterhead, rather than the compact continuous layout used
-// for every other quotation type. See PROJECT_STATE.md for the reference
-// analysis this was built from. Every value below comes from the quotation/
-// company/client records - nothing here is the reference document's own
+// format, branded with the company's own letterhead artwork on every page) -
+// deliberately laid out as discrete, forced-page-break sections rather than
+// the compact continuous layout used for every other quotation type. The
+// reference maps to roughly 8 sections, but Bank Details got its own page
+// (see the comment further down) since our commercial page carries more
+// detail (a full line-items table) than the reference's terser box and no
+// longer reliably fits alongside it on one physical page. See
+// PROJECT_STATE.md for the reference analysis this was built from. Every
+// value below comes from the quotation/company/client records - nothing
+// here is the reference document's own
 // sample data.
 function EightPageSolarProposal({
   quotation,
@@ -577,13 +616,8 @@ function EightPageSolarProposal({
       </div>
 
       {/* PAGE 1 - Cover */}
-      <div>
-        <div className="flex items-start justify-between">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt={company?.name ?? "Company logo"} className="h-16 w-auto object-contain" />
-          <div className="text-right text-sm font-semibold text-slate-700">{company?.tagline}</div>
-        </div>
-        <div className="mt-20 text-center">
+      <div className="relative" style={{ ...LETTERHEAD_PAGE_STYLE, paddingTop: "40mm", paddingBottom: "68mm", paddingLeft: "6mm", paddingRight: "6mm" }}>
+        <div className="text-center">
           <p className="text-2xl font-bold tracking-wide">PROJECT REPORT</p>
           <p className="mt-4 text-lg">ON</p>
           <p className="mt-4 text-3xl font-bold">
@@ -608,17 +642,15 @@ function EightPageSolarProposal({
 
       {/* PAGE 2 - Branding / website (thin, matches the reference's own repeated-letterhead-only page) */}
       <PageDivider label="Page 2" />
-      <div className="print:break-before-page">
-        <Letterhead company={company} companyAddressLines={companyAddressLines} />
+      <LetterheadPage company={company} companyAddressLines={companyAddressLines}>
         {company?.website ? (
           <p className="mt-32 text-center text-lg font-medium text-slate-600">{company.website}</p>
         ) : null}
-      </div>
+      </LetterheadPage>
 
       {/* PAGE 3 - Letter / introduction */}
       <PageDivider label="Page 3" />
-      <div className="print:break-before-page">
-        <Letterhead company={company} companyAddressLines={companyAddressLines} />
+      <LetterheadPage company={company} companyAddressLines={companyAddressLines}>
         <p>Ref No.: {quotation.quotationNumber}</p>
         <p>Date: {quotation.quotationDate.toLocaleDateString("en-IN")}</p>
         <p className="mt-3">{customerDisplayName},</p>
@@ -629,14 +661,13 @@ function EightPageSolarProposal({
         ) : null}
         {quotation.subject ? <p className="mt-2 font-medium">Subject: {quotation.subject}</p> : null}
         {quotation.notes ? <p className="mt-2 whitespace-pre-wrap text-slate-700">{quotation.notes}</p> : null}
-      </div>
+      </LetterheadPage>
 
       {/* PAGE 4 - Corporate philosophy */}
       {hasPhilosophy ? (
         <>
           <PageDivider label="Page 4" />
-          <div className="print:break-before-page">
-            <Letterhead company={company} companyAddressLines={companyAddressLines} />
+          <LetterheadPage company={company} companyAddressLines={companyAddressLines}>
             <p className="text-sm font-bold">A) Our Corporate Philosophy</p>
             <div className="mt-2 space-y-2">
               {proposal.vision ? (
@@ -658,14 +689,13 @@ function EightPageSolarProposal({
                 </div>
               ) : null}
             </div>
-          </div>
+          </LetterheadPage>
         </>
       ) : null}
 
-      {/* PAGE 5 - Commercial quotation + payment + bank details */}
+      {/* PAGE 5 - Commercial quotation + line items + payment terms */}
       <PageDivider label="Page 5" />
-      <div className="print:break-before-page">
-        <Letterhead company={company} companyAddressLines={companyAddressLines} />
+      <LetterheadPage company={company} companyAddressLines={companyAddressLines}>
         <p className="mb-2 text-center text-sm font-bold">
           QUOTATION OF {config.systemCapacity ? `${config.systemCapacity} KW ` : ""}
           {gridTypeWord} SYSTEM
@@ -775,18 +805,25 @@ function EightPageSolarProposal({
           {company?.phone ? <p>Ph No: {company.phone}</p> : null}
           {company?.email ? <p>Mail Id: {company.email}</p> : null}
         </div>
+      </LetterheadPage>
 
-        <div className="mt-3">
-          <BankDetailsBlock company={company} />
-        </div>
-      </div>
+      {/* PAGE 6 - Bank details + signature (split out from Page 5: with a full
+          line-items table + totals + payment terms already on that page, the
+          bank details block no longer reliably fits the same physical page -
+          it was previously overflowing onto an unstyled trailing page with no
+          letterhead at all. Giving it its own explicit page keeps the
+          letterhead on every physical page, per the "controlled page breaks,
+          not accidental overflow" requirement this layout was built to.) */}
+      <PageDivider label="Page 6" />
+      <LetterheadPage company={company} companyAddressLines={companyAddressLines}>
+        <BankDetailsBlock company={company} />
+      </LetterheadPage>
 
-      {/* PAGE 6 - Terms & conditions */}
+      {/* PAGE 7 - Terms & conditions */}
       {standardClauses.length > 0 || quotation.termsAndConditions ? (
         <>
-          <PageDivider label="Page 6" />
-          <div className="print:break-before-page">
-            <Letterhead company={company} companyAddressLines={companyAddressLines} />
+          <PageDivider label="Page 7" />
+          <LetterheadPage company={company} companyAddressLines={companyAddressLines}>
             <p className="mb-2 text-sm font-bold">Terms and Condition</p>
             <p className="mb-2 text-slate-700">Please review the following Terms and Conditions.</p>
             {standardClauses.length > 0 ? (
@@ -802,14 +839,13 @@ function EightPageSolarProposal({
             {quotation.termsAndConditions ? (
               <p className="mt-2 whitespace-pre-wrap text-xs text-slate-700">{quotation.termsAndConditions}</p>
             ) : null}
-          </div>
+          </LetterheadPage>
         </>
       ) : null}
 
-      {/* PAGE 7 - Design inputs + technical details */}
-      <PageDivider label="Page 7" />
-      <div className="print:break-before-page">
-        <Letterhead company={company} companyAddressLines={companyAddressLines} />
+      {/* PAGE 8 - Design inputs + technical details */}
+      <PageDivider label="Page 8" />
+      <LetterheadPage company={company} companyAddressLines={companyAddressLines}>
         {hasDesignInputs ? (
           <div className="mb-4 print:break-inside-avoid">
             <p className="text-sm font-bold">Design Inputs</p>
@@ -886,14 +922,13 @@ function EightPageSolarProposal({
           />
         </div>
         {config.notes ? <p className="mt-2 text-xs text-slate-600">{config.notes}</p> : null}
-      </div>
+      </LetterheadPage>
 
-      {/* PAGE 8 - Installation included + excluded */}
+      {/* PAGE 9 - Installation included + excluded */}
       {config.installationIncluded || config.installationExcluded ? (
         <>
-          <PageDivider label="Page 8" />
-          <div className="print:break-before-page">
-            <Letterhead company={company} companyAddressLines={companyAddressLines} />
+          <PageDivider label="Page 9" />
+          <LetterheadPage company={company} companyAddressLines={companyAddressLines}>
             {config.installationIncluded ? (
               <div className="mb-4">
                 <p className="mb-1 text-sm font-bold">Installation Included -</p>
@@ -906,7 +941,7 @@ function EightPageSolarProposal({
                 <MultilineList text={config.installationExcluded} ordered />
               </div>
             ) : null}
-          </div>
+          </LetterheadPage>
         </>
       ) : null}
     </div>
