@@ -1019,7 +1019,14 @@ function DgProposal({
   const commercialClauses = filledDgClauses.length > 0 ? filledDgClauses : standardClauses;
 
   const hasWarrantyAnnexure = Boolean(config.warranty || config.dgFreeServiceChecks || config.dgWarrantyConditions);
-  const hasCertificate = Boolean(config.dgCertificateText);
+  // The real, signed Kirloskar Authorized Sales Dealer certificate for Shanvi Enterprises
+  // (extracted from the CPCB reference .doc's embedded images, rotated to upright) is only
+  // factually correct to show when the quotation's own manufacturer field says Kirloskar -
+  // never shown for a different manufacturer's DG quotation. Falls back to the free-text
+  // dgCertificateText statement (which the company can fill in for any other manufacturer)
+  // when it doesn't match.
+  const hasRealKirloskarCertificate = (config.dgManufacturer ?? "").trim().toLowerCase().includes("kirloskar");
+  const hasCertificate = hasRealKirloskarCertificate || Boolean(config.dgCertificateText);
 
   return (
     <div className="mx-auto max-w-4xl bg-white p-4 text-[13px] text-slate-900 print:p-0">
@@ -1236,12 +1243,29 @@ function DgProposal({
       ) : null}
 
       {/* PAGE 8 - Authorized Channel Partner / Dealer Certificate (last page, per the
-          reference's own Annexure 8). The reference's certificate is just a heading plus
-          the company's own logo (already part of the letterhead artwork on every page) and
-          GSTIN - no separate certificate artwork exists to reproduce, so the certifying
-          statement itself is a free-text field the company edits per quotation rather than
-          hardcoded brand copy. */}
-      {hasCertificate ? (
+          reference's own Annexure 8). For Kirloskar, this is the real signed certificate
+          image (extracted from the reference document itself) shown full-page and on its
+          own, without the Shanvi letterhead wrapper - it's Kirloskar's own official
+          document, not Shanvi's, and already carries its own header/signature. For any
+          other manufacturer there's no equivalent artwork to show, so it falls back to a
+          free-text certifying statement the company can fill in per quotation, on the
+          normal letterhead-branded page. */}
+      {hasRealKirloskarCertificate ? (
+        <>
+          <PageDivider label="Page 8" />
+          <div
+            className="relative flex items-center justify-center print:break-before-page"
+            style={{ minHeight: "277mm" }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/dg-certificate-kirloskar.png"
+              alt="Kirloskar Authorized Sales Dealer Certificate"
+              className="max-h-[260mm] max-w-full object-contain print:break-inside-avoid"
+            />
+          </div>
+        </>
+      ) : hasCertificate ? (
         <>
           <PageDivider label="Page 8" />
           <LetterheadPage company={company} companyAddressLines={companyAddressLines}>

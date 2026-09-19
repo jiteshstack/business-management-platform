@@ -591,15 +591,14 @@ documents (On-Grid, Off-Grid, CPCB DG) for a fresh verification pass. The verifi
 PASS on structure/dynamic-data/print-quality, but flagged 2 known, already-logged content gaps in
 the DG layout - the user asked to close both, plus add the reference's Annexure 8 certificate page.
 
-- **Forensic finding on the certificate**: the reference's "Annexure 8: Authorized dealer
-  certificate" contains almost no reproducible text - just a heading, the company's GSTIN, and an
-  `EMBED AcroExch.Document.7` OLE object with placeholder text "INSERT YOUR LOGO" next to it. Carved
-  the embedded object directly out of the raw `.doc` binary (found via a `%PDF-` signature scan of
-  the file, same byte-scanning technique used for the earlier logo forensics) and rendered it - it
-  turned out to be nothing more than a close-up photo of the same Shanvi Enterprises logo already
-  baked into `quotation-letterhead.png`, not a distinct certificate artwork. So there is no separate
-  image asset to extract for this page (unlike the letterhead itself); the certificate is
-  functionally just a certifying statement plus the already-present letterhead/GSTIN.
+- **Forensic finding on the certificate (initially wrong, corrected in the very next round below)**:
+  scanning the raw `.doc` for a `%PDF-` signature (same technique as the earlier logo forensics)
+  turned up one embedded `EMBED AcroExch.Document.7` object next to the placeholder text "INSERT
+  YOUR LOGO," which rendered as nothing more than a close-up photo of the Shanvi Enterprises logo -
+  so this round concluded there was no separate certificate artwork to extract, and shipped a
+  free-text `dgCertificateText` field instead. This missed a *different* embedded image elsewhere in
+  the same file (see below) - the `%PDF-` scan only ever found the one OLE object, not the doc's
+  other embedded raster images.
 - **New `technical-config-section.tsx` fields**, all under the existing DG-only branch:
   - "Warranty & Service": `dgFreeServiceChecks` (single-line) and `dgWarrantyConditions`
     (multi-line bullet list) - richer than the single `warranty` field, matching the reference's
@@ -636,6 +635,45 @@ the DG layout - the user asked to close both, plus add the reference's Annexure 
   cleanly with the letterhead correctly repeated and no clipping. Re-checked the existing On-Grid
   Solar test quotation (still 8 pages) to confirm the Solar layout - untouched by this round - has
   no regression.
+
+## Post-baseline change: correction - the real Kirloskar dealer certificate
+
+The user pushed back after the round above, pointing at the reference `.doc` again and saying the
+actual layout/format still looked different. Re-scanning the file for **all** embedded raster
+images (not just the one `%PDF-`-signed OLE object checked in the previous round) turned up 5 PNGs
+and 2 JPEGs, one of which - a 474x670 PNG - was the genuine, real, signed Kirloskar Powergen
+"Authorized Sales Dealer" certificate for Shanvi Enterprises (S17/334, Beside Singh Medical,
+Maldahiya, Varanasi - a different address than the one currently in the company profile, not
+reconciled as part of this round), valid to 31 March 2027, signed by Kirloskar's Powergen Sales
+Head. It was stored rotated 90 degrees in the file; rotating it upright in Python (PIL) confirmed
+it. **This directly contradicts the previous round's conclusion** - there is real, extractable
+certificate artwork, the earlier forensic pass just didn't check for it correctly.
+
+- **`public/dg-certificate-kirloskar.png`** (new asset): the certificate image, extracted and
+  rotated upright, used as-is (nothing redrawn/recreated), same standard as the letterhead artwork.
+- The other extracted images were checked and correctly excluded: a "KOEL Green Care Center" call-
+  centre photo, an "Efficient Products/Solutions/Service/..." six-panel infographic, a Kirloskar
+  helpdesk contact card, and the plain Kirloskar logo - all generic Kirloskar brand marketing
+  collateral, not Shanvi-specific, consistent with the standing principle against hardcoding a
+  third party's marketing content.
+- **`DgProposal`'s certificate page** now shows the real image, full-page and on its own (no Shanvi
+  letterhead wrapper, since it's Kirloskar's own already-designed document with its own header and
+  signature - wrapping it in Shanvi's letterhead would double up branding), gated on
+  `config.dgManufacturer` containing "kirloskar" (case-insensitive) - **never shown unconditionally**,
+  since showing Kirloskar's specific certificate on a quotation for a different DG manufacturer
+  would be factually wrong. Falls back to the free-text `dgCertificateText` statement (on the normal
+  letterhead page) for any other manufacturer, since no equivalent artwork exists for those.
+- Verified with tsc/lint/build (all clean) and a real PDF re-export of the DG test quotation
+  (still 8 pages; the certificate page now shows the actual certificate image, upright, correctly
+  sized, no clipping, no double letterhead).
+- **Open question for the user, not yet acted on**: the QuickLook render of the full reference
+  document (used to sanity-check this round) showed the source document is a visually rich,
+  Kirloskar-branded proposal template - colored section banners, an India service-network map,
+  icon grids, italic taglines - well beyond what any of the app's DG pages currently reproduce.
+  Most of that richness is Kirloskar's own generic template design/marketing graphics rather than
+  Shanvi-specific content, which is why it hasn't been pulled in automatically; if the user wants
+  the visual *style* (not just content) matched more closely, that's a separate, larger scoping
+  conversation still to be had.
 
 ## Recommended next phase
 
