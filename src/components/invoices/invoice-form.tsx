@@ -26,7 +26,6 @@ type InvoiceFormDefaults = {
   billingAddressId?: string | null;
   invoiceDate?: string;
   dueDate?: string | null;
-  salespersonId?: string | null;
   paymentTerms?: string | null;
   notes?: string | null;
   discountPercent?: number | null;
@@ -63,7 +62,6 @@ export function InvoiceForm({
   action,
   clients,
   products,
-  salespeople,
   defaults,
   cancelHref,
 }: {
@@ -71,7 +69,6 @@ export function InvoiceForm({
   action: (state: FormActionState, formData: FormData) => Promise<FormActionState>;
   clients: ClientOption[];
   products: ProductOption[];
-  salespeople: { id: string; name: string }[];
   defaults?: InvoiceFormDefaults;
   cancelHref: string;
 }) {
@@ -152,16 +149,6 @@ export function InvoiceForm({
           <CardTitle>Invoice Details</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field id="salespersonId" label="Salesperson" error={fieldErrors.salespersonId}>
-            <Select id="salespersonId" name="salespersonId" defaultValue={value("salespersonId") || defaults?.salespersonId || ""}>
-              <option value="">-</option>
-              {salespeople.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name}
-                </option>
-              ))}
-            </Select>
-          </Field>
           <Field id="invoiceDate" label="Invoice Date *" error={fieldErrors.invoiceDate}>
             <Input
               id="invoiceDate"

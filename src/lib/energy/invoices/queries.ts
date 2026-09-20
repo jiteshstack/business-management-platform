@@ -66,7 +66,7 @@ export async function listInvoices(params: InvoiceListParams) {
       orderBy: sortToOrderBy(sort),
       skip: (safePage - 1) * INVOICE_PAGE_SIZE,
       take: INVOICE_PAGE_SIZE,
-      include: { client: true, salesperson: true },
+      include: { client: true },
     }),
     prisma.invoice.count({ where }),
   ]);
@@ -80,7 +80,6 @@ export async function getInvoiceById(params: { companyId: string; id: string }) 
     where: { id, companyId },
     include: {
       client: true,
-      salesperson: true,
       salesOrder: true,
       quotation: true,
       items: { orderBy: { sortOrder: "asc" }, include: { product: true } },

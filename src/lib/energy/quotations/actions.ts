@@ -15,6 +15,7 @@ import {
   str,
 } from "@/lib/core/form-state";
 import { quotationFormSchema } from "./schema";
+import { resolveSiteSelection } from "@/lib/energy/shared/site-selection";
 import type { LineItemFormValues } from "@/lib/energy/shared/form-fields";
 import { calculateLineItem, calculateDocumentTotals } from "@/lib/energy/shared/pricing";
 import { QUOTATION_STATUS_TRANSITIONS, type QuotationStatus } from "./types";
@@ -30,11 +31,10 @@ function requireQuotationManager(role: Parameters<typeof canManageQuotations>[0]
 function readQuotationForm(formData: FormData) {
   return {
     clientId: str(formData, "clientId"),
-    siteAddressId: str(formData, "siteAddressId"),
+    siteSelection: str(formData, "siteSelection"),
     type: str(formData, "type"),
     quotationDate: str(formData, "quotationDate"),
     validUntil: str(formData, "validUntil"),
-    salespersonId: str(formData, "salespersonId"),
     reference: str(formData, "reference"),
     subject: str(formData, "subject"),
     notes: str(formData, "notes"),
@@ -133,17 +133,24 @@ export async function createQuotationAction(
     return { error: "Select a valid client.", values: rawValues(formData), attempt: nextAttempt(_prevState) };
   }
 
+  let siteId: string | null;
+  let siteAddressId: string | null;
   let siteAddressText: string | undefined;
-  if (values.siteAddressId) {
-    const address = await prisma.partyAddress.findFirst({
-      where: { id: values.siteAddressId, partyId: client.id },
+  try {
+    const resolved = await resolveSiteSelection({
+      companyId: session.companyId,
+      clientId: client.id,
+      siteSelection: values.siteSelection,
     });
-    if (!address) {
-      return { error: "Select a valid site address.", values: rawValues(formData), attempt: nextAttempt(_prevState) };
-    }
-    siteAddressText = [address.line1, address.line2, address.city, address.state, address.pincode]
-      .filter(Boolean)
-      .join(", ");
+    siteId = resolved.siteId;
+    siteAddressId = resolved.siteAddressId;
+    siteAddressText = resolved.siteAddressText;
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Invalid site.",
+      values: rawValues(formData),
+      attempt: nextAttempt(_prevState),
+    };
   }
 
   let lineRows;
@@ -179,14 +186,14 @@ export async function createQuotationAction(
         quotationNumber,
         revisionNumber: 0,
         clientId: client.id,
-        siteAddressId: values.siteAddressId ?? null,
+        siteId,
+        siteAddressId,
         siteAddressText,
         billingAddressText,
         type: values.type,
         status: "DRAFT",
         quotationDate,
         validUntil,
-        salespersonId: values.salespersonId ?? session.userId,
         reference: values.reference,
         subject: values.subject,
         notes: values.notes,
@@ -261,17 +268,24 @@ export async function updateQuotationAction(
     return { error: "Select a valid client.", values: rawValues(formData), attempt: nextAttempt(_prevState) };
   }
 
+  let siteId: string | null;
+  let siteAddressId: string | null;
   let siteAddressText: string | undefined;
-  if (values.siteAddressId) {
-    const address = await prisma.partyAddress.findFirst({
-      where: { id: values.siteAddressId, partyId: client.id },
+  try {
+    const resolved = await resolveSiteSelection({
+      companyId: session.companyId,
+      clientId: client.id,
+      siteSelection: values.siteSelection,
     });
-    if (!address) {
-      return { error: "Select a valid site address.", values: rawValues(formData), attempt: nextAttempt(_prevState) };
-    }
-    siteAddressText = [address.line1, address.line2, address.city, address.state, address.pincode]
-      .filter(Boolean)
-      .join(", ");
+    siteId = resolved.siteId;
+    siteAddressId = resolved.siteAddressId;
+    siteAddressText = resolved.siteAddressText;
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Invalid site.",
+      values: rawValues(formData),
+      attempt: nextAttempt(_prevState),
+    };
   }
 
   let lineRows;
@@ -296,13 +310,13 @@ export async function updateQuotationAction(
       where: { id },
       data: {
         clientId: client.id,
-        siteAddressId: values.siteAddressId ?? null,
+        siteId,
+        siteAddressId,
         siteAddressText,
         billingAddressText,
         type: values.type,
         quotationDate,
         validUntil,
-        salespersonId: values.salespersonId ?? undefined,
         reference: values.reference,
         subject: values.subject,
         notes: values.notes,
@@ -405,6 +419,7 @@ export async function createRevisionAction(id: string): Promise<void> {
         rootQuotationId: rootId,
         isLatestRevision: true,
         clientId: source.clientId,
+        siteId: source.siteId,
         siteAddressId: source.siteAddressId,
         siteAddressText: source.siteAddressText,
         billingAddressText: source.billingAddressText,
@@ -412,7 +427,6 @@ export async function createRevisionAction(id: string): Promise<void> {
         status: "DRAFT",
         quotationDate: new Date(),
         validUntil: source.validUntil,
-        salespersonId: source.salespersonId,
         reference: source.reference,
         subject: source.subject,
         notes: source.notes,
@@ -492,6 +506,7 @@ export async function duplicateQuotationAction(id: string): Promise<void> {
         quotationNumber,
         revisionNumber: 0,
         clientId: source.clientId,
+        siteId: source.siteId,
         siteAddressId: source.siteAddressId,
         siteAddressText: source.siteAddressText,
         billingAddressText: source.billingAddressText,
@@ -499,7 +514,6 @@ export async function duplicateQuotationAction(id: string): Promise<void> {
         status: "DRAFT",
         quotationDate: new Date(),
         validUntil: defaultValidUntil(new Date()),
-        salespersonId: source.salespersonId,
         reference: source.reference,
         subject: source.subject,
         notes: source.notes,

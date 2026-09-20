@@ -124,7 +124,6 @@ function OverviewTab({ salesOrder }: { salesOrder: SalesOrderWithRelations }) {
           <OverviewField label="Site" value={salesOrder.siteAddressText} />
           <OverviewField label="Order Date" value={salesOrder.orderDate.toLocaleDateString()} />
           <OverviewField label="Expected Delivery" value={salesOrder.expectedDeliveryDate?.toLocaleDateString()} />
-          <OverviewField label="Salesperson" value={salesOrder.salesperson?.name} />
           <OverviewField
             label="Source Quotation"
             value={

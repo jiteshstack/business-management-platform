@@ -32,7 +32,7 @@ export async function InvoiceEditView({ id }: { id: string }) {
     );
   }
 
-  const [clients, products, users] = await Promise.all([
+  const [clients, products] = await Promise.all([
     prisma.party.findMany({
       where: { companyId: session.companyId, type: "CLIENT", isActive: true },
       orderBy: { name: "asc" },
@@ -42,11 +42,6 @@ export async function InvoiceEditView({ id }: { id: string }) {
       where: { companyId: session.companyId, isActive: true },
       orderBy: { name: "asc" },
       include: { unit: true },
-    }),
-    prisma.user.findMany({
-      where: { companyId: session.companyId, isActive: true },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
     }),
   ]);
 
@@ -86,13 +81,11 @@ export async function InvoiceEditView({ id }: { id: string }) {
         action={updateInvoiceAction.bind(null, id)}
         clients={clientOptions}
         products={productOptions}
-        salespeople={users}
         cancelHref={`/sales/invoices/${id}`}
         defaults={{
           clientId: invoice.clientId,
           invoiceDate: invoice.invoiceDate.toISOString().slice(0, 10),
           dueDate: invoice.dueDate ? invoice.dueDate.toISOString().slice(0, 10) : null,
-          salespersonId: invoice.salespersonId,
           paymentTerms: invoice.paymentTerms,
           notes: invoice.notes,
           discountPercent: invoice.discountPercent,

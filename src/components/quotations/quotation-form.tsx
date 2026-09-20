@@ -19,16 +19,17 @@ const initialState: FormActionState = {};
 export type ClientOption = {
   id: string;
   name: string;
+  sites: { id: string; name: string; city: string | null }[];
   addresses: { id: string; label: string | null; line1: string; city: string | null }[];
 };
 
 type QuotationFormDefaults = {
   clientId?: string;
-  siteAddressId?: string | null;
+  // "site:<ProjectSite id>" | "address:<PartyAddress id>" | undefined
+  siteSelection?: string | null;
   type?: string;
   quotationDate?: string;
   validUntil?: string | null;
-  salespersonId?: string | null;
   reference?: string | null;
   subject?: string | null;
   notes?: string | null;
@@ -74,7 +75,6 @@ export function QuotationForm({
   action,
   clients,
   products,
-  salespeople,
   defaults,
   companyDefaultTerms,
   companyProposalContent,
@@ -84,7 +84,6 @@ export function QuotationForm({
   action: (state: FormActionState, formData: FormData) => Promise<FormActionState>;
   clients: ClientOption[];
   products: ProductOption[];
-  salespeople: { id: string; name: string }[];
   defaults?: QuotationFormDefaults;
   companyDefaultTerms?: string | null;
   companyProposalContent?: ProposalContentValues;
@@ -142,14 +141,31 @@ export function QuotationForm({
               ))}
             </Select>
           </Field>
-          <Field id="siteAddressId" label="Site Address" error={fieldErrors.siteAddressId}>
-            <Select id="siteAddressId" name="siteAddressId" defaultValue={value("siteAddressId") || defaults?.siteAddressId || ""}>
+          <Field id="siteSelection" label="Site Address" error={fieldErrors.siteSelection}>
+            <Select
+              id="siteSelection"
+              name="siteSelection"
+              defaultValue={value("siteSelection") || defaults?.siteSelection || ""}
+            >
               <option value="">No specific site</option>
-              {selectedClient?.addresses.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.label ?? a.line1} {a.city ? `(${a.city})` : ""}
-                </option>
-              ))}
+              {selectedClient?.sites.length ? (
+                <optgroup label="Sites">
+                  {selectedClient.sites.map((s) => (
+                    <option key={s.id} value={`site:${s.id}`}>
+                      {s.name} {s.city ? `(${s.city})` : ""}
+                    </option>
+                  ))}
+                </optgroup>
+              ) : null}
+              {selectedClient?.addresses.length ? (
+                <optgroup label="Other addresses">
+                  {selectedClient.addresses.map((a) => (
+                    <option key={a.id} value={`address:${a.id}`}>
+                      {a.label ?? a.line1} {a.city ? `(${a.city})` : ""}
+                    </option>
+                  ))}
+                </optgroup>
+              ) : null}
             </Select>
           </Field>
         </CardContent>
@@ -165,16 +181,6 @@ export function QuotationForm({
               {QUOTATION_TYPES.map((t) => (
                 <option key={t} value={t}>
                   {QUOTATION_TYPE_LABELS[t]}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <Field id="salespersonId" label="Salesperson" error={fieldErrors.salespersonId}>
-            <Select id="salespersonId" name="salespersonId" defaultValue={value("salespersonId") || defaults?.salespersonId || ""}>
-              <option value="">-</option>
-              {salespeople.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name}
                 </option>
               ))}
             </Select>

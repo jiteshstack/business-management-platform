@@ -66,7 +66,7 @@ export async function listSalesOrders(params: SalesOrderListParams) {
       orderBy: sortToOrderBy(sort),
       skip: (safePage - 1) * SALES_ORDER_PAGE_SIZE,
       take: SALES_ORDER_PAGE_SIZE,
-      include: { client: true, salesperson: true },
+      include: { client: true },
     }),
     prisma.salesOrder.count({ where }),
   ]);
@@ -81,7 +81,6 @@ export async function getSalesOrderById(params: { companyId: string; id: string 
     include: {
       client: true,
       siteAddress: true,
-      salesperson: true,
       quotation: true,
       items: { orderBy: { sortOrder: "asc" }, include: { product: true } },
       invoices: { orderBy: { createdAt: "desc" } },

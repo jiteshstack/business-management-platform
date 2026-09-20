@@ -268,7 +268,6 @@ export async function QuotationPrintView({ id }: { id: string }) {
         <div className="text-right">
           <p className="font-medium">{QUOTATION_TYPE_LABELS[type] ?? quotation.type}</p>
           {quotation.validUntil ? <p>Valid Until: {quotation.validUntil.toLocaleDateString("en-IN")}</p> : null}
-          {quotation.salesperson ? <p>Prepared by: {quotation.salesperson.name}</p> : null}
         </div>
       </section>
 
@@ -827,7 +826,6 @@ function EightPageSolarProposal({
 
         <div className="mt-3 text-xs">
           <p className="font-semibold">{company?.name ?? "Company"},</p>
-          {quotation.salesperson ? <p>{quotation.salesperson.name}</p> : null}
           {company?.phone ? <p>Ph No: {company.phone}</p> : null}
           {company?.email ? <p>Mail Id: {company.email}</p> : null}
         </div>
@@ -1075,7 +1073,6 @@ function DgProposal({
         <p className="mt-4">Thanking you,</p>
         <p>Yours faithfully,</p>
         <div className="mt-2">
-          {quotation.salesperson ? <p>{quotation.salesperson.name}</p> : null}
           <p>{company?.name ?? "Company"}</p>
           {companyAddressLines.length > 0 ? <p>{companyAddressLines.join(", ")}</p> : null}
           {company?.phone ? <p>Ph. No. {company.phone}</p> : null}

@@ -93,7 +93,7 @@ export async function listQuotations(params: QuotationListParams) {
       orderBy: sortToOrderBy(sort),
       skip: (safePage - 1) * QUOTATION_PAGE_SIZE,
       take: QUOTATION_PAGE_SIZE,
-      include: { client: true, salesperson: true },
+      include: { client: true },
     }),
     prisma.quotation.count({ where }),
   ]);
@@ -108,7 +108,6 @@ export async function getQuotationById(params: { companyId: string; id: string }
     include: {
       client: true,
       siteAddress: true,
-      salesperson: true,
       items: { orderBy: { sortOrder: "asc" }, include: { product: true } },
     },
   });

@@ -8,27 +8,28 @@ import type { ProductOption } from "@/components/shared/line-items-editor";
 export async function SalesOrderCreateView() {
   const session = await requireSession();
 
-  const [clients, products, users] = await Promise.all([
+  const [clients, sites, products] = await Promise.all([
     prisma.party.findMany({
       where: { companyId: session.companyId, type: "CLIENT", isActive: true },
       orderBy: { name: "asc" },
       include: { addresses: { where: { type: "SITE" } } },
+    }),
+    prisma.projectSite.findMany({
+      where: { companyId: session.companyId },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, city: true, customerId: true },
     }),
     prisma.product.findMany({
       where: { companyId: session.companyId, isActive: true },
       orderBy: { name: "asc" },
       include: { unit: true },
     }),
-    prisma.user.findMany({
-      where: { companyId: session.companyId, isActive: true },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    }),
   ]);
 
   const clientOptions: ClientOption[] = clients.map((c) => ({
     id: c.id,
     name: c.name,
+    sites: sites.filter((s) => s.customerId === c.id).map((s) => ({ id: s.id, name: s.name, city: s.city })),
     addresses: c.addresses.map((a) => ({ id: a.id, label: a.label, line1: a.line1, city: a.city })),
   }));
 
@@ -49,7 +50,6 @@ export async function SalesOrderCreateView() {
         action={createSalesOrderAction}
         clients={clientOptions}
         products={productOptions}
-        salespeople={users}
         cancelHref="/sales/sales-orders"
       />
     </div>

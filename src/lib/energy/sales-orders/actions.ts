@@ -15,6 +15,7 @@ import {
   str,
 } from "@/lib/core/form-state";
 import { salesOrderFormSchema } from "./schema";
+import { resolveSiteSelection } from "@/lib/energy/shared/site-selection";
 import type { LineItemFormValues } from "@/lib/energy/shared/form-fields";
 import { calculateLineItem, calculateDocumentTotals } from "@/lib/energy/shared/pricing";
 import { applyStockMovement, StockRuleError } from "@/lib/energy/inventory/ledger";
@@ -32,10 +33,9 @@ function requireSalesOrderManager(role: Parameters<typeof canManageSalesOrders>[
 function readSalesOrderForm(formData: FormData) {
   return {
     clientId: str(formData, "clientId"),
-    siteAddressId: str(formData, "siteAddressId"),
+    siteSelection: str(formData, "siteSelection"),
     orderDate: str(formData, "orderDate"),
     expectedDeliveryDate: str(formData, "expectedDeliveryDate"),
-    salespersonId: str(formData, "salespersonId"),
     paymentTerms: str(formData, "paymentTerms"),
     notes: str(formData, "notes"),
     discountPercent: str(formData, "discountPercent"),
@@ -77,13 +77,6 @@ async function buildLineItemRows(companyId: string, items: LineItemFormValues[])
   });
 }
 
-async function resolveSiteAddressText(clientId: string, siteAddressId: string | undefined) {
-  if (!siteAddressId) return undefined;
-  const address = await prisma.partyAddress.findFirst({ where: { id: siteAddressId, partyId: clientId } });
-  if (!address) throw new Error("Select a valid site address.");
-  return [address.line1, address.line2, address.city, address.state, address.pincode].filter(Boolean).join(", ");
-}
-
 export async function createSalesOrderAction(
   _prevState: FormActionState,
   formData: FormData
@@ -109,12 +102,21 @@ export async function createSalesOrderAction(
     return { error: "Select a valid client.", values: rawValues(formData), attempt: nextAttempt(_prevState) };
   }
 
+  let siteId: string | null;
+  let siteAddressId: string | null;
   let siteAddressText: string | undefined;
   try {
-    siteAddressText = await resolveSiteAddressText(client.id, values.siteAddressId);
+    const resolved = await resolveSiteSelection({
+      companyId: session.companyId,
+      clientId: client.id,
+      siteSelection: values.siteSelection,
+    });
+    siteId = resolved.siteId;
+    siteAddressId = resolved.siteAddressId;
+    siteAddressText = resolved.siteAddressText;
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : "Invalid site address.",
+      error: error instanceof Error ? error.message : "Invalid site.",
       values: rawValues(formData),
       attempt: nextAttempt(_prevState),
     };
@@ -147,11 +149,11 @@ export async function createSalesOrderAction(
         soNumber,
         status: "DRAFT",
         clientId: client.id,
-        siteAddressId: values.siteAddressId ?? null,
+        siteId,
+        siteAddressId,
         siteAddressText,
         orderDate,
         expectedDeliveryDate: values.expectedDeliveryDate ? new Date(values.expectedDeliveryDate) : null,
-        salespersonId: values.salespersonId ?? session.userId,
         paymentTerms: values.paymentTerms,
         notes: values.notes,
         discountPercent: values.discountPercent ?? null,
@@ -214,12 +216,21 @@ export async function updateSalesOrderAction(
     return { error: "Select a valid client.", values: rawValues(formData), attempt: nextAttempt(_prevState) };
   }
 
+  let siteId: string | null;
+  let siteAddressId: string | null;
   let siteAddressText: string | undefined;
   try {
-    siteAddressText = await resolveSiteAddressText(client.id, values.siteAddressId);
+    const resolved = await resolveSiteSelection({
+      companyId: session.companyId,
+      clientId: client.id,
+      siteSelection: values.siteSelection,
+    });
+    siteId = resolved.siteId;
+    siteAddressId = resolved.siteAddressId;
+    siteAddressText = resolved.siteAddressText;
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : "Invalid site address.",
+      error: error instanceof Error ? error.message : "Invalid site.",
       values: rawValues(formData),
       attempt: nextAttempt(_prevState),
     };
@@ -245,11 +256,11 @@ export async function updateSalesOrderAction(
       where: { id },
       data: {
         clientId: client.id,
-        siteAddressId: values.siteAddressId ?? null,
+        siteId,
+        siteAddressId,
         siteAddressText,
         orderDate,
         expectedDeliveryDate: values.expectedDeliveryDate ? new Date(values.expectedDeliveryDate) : null,
-        salespersonId: values.salespersonId ?? undefined,
         paymentTerms: values.paymentTerms,
         notes: values.notes,
         discountPercent: values.discountPercent ?? null,
@@ -307,11 +318,11 @@ export async function createSalesOrderFromQuotationAction(quotationId: string): 
         soNumber,
         status: "DRAFT",
         clientId: quotation.clientId,
+        siteId: quotation.siteId,
         siteAddressId: quotation.siteAddressId,
         siteAddressText: quotation.siteAddressText,
         quotationId: quotation.id,
         orderDate: new Date(),
-        salespersonId: quotation.salespersonId,
         paymentTerms: quotation.paymentTerms,
         notes: quotation.notes,
         discountPercent: quotation.discountPercent,

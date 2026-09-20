@@ -175,7 +175,6 @@ function OverviewTab({ quotation }: { quotation: QuotationWithRelations }) {
           <OverviewField label="Site" value={quotation.siteAddressText} />
           <OverviewField label="Quotation Date" value={quotation.quotationDate.toLocaleDateString()} />
           <OverviewField label="Valid Until" value={quotation.validUntil?.toLocaleDateString()} />
-          <OverviewField label="Salesperson" value={quotation.salesperson?.name} />
           <OverviewField label="Reference" value={quotation.reference} />
           {quotation.subject ? (
             <div className="sm:col-span-2">

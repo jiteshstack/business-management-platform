@@ -7,7 +7,6 @@ export const invoiceFormSchema = z.object({
   billingAddressId: optionalTrimmed,
   invoiceDate: z.string().trim().refine((v) => !Number.isNaN(Date.parse(v)), "Enter a valid date"),
   dueDate: optionalDate,
-  salespersonId: optionalTrimmed,
   paymentTerms: optionalTrimmed,
   notes: optionalTrimmed,
   discountPercent: optionalNumber,

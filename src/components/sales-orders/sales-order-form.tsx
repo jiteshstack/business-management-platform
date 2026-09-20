@@ -16,15 +16,16 @@ const initialState: FormActionState = {};
 export type ClientOption = {
   id: string;
   name: string;
+  sites: { id: string; name: string; city: string | null }[];
   addresses: { id: string; label: string | null; line1: string; city: string | null }[];
 };
 
 type SalesOrderFormDefaults = {
   clientId?: string;
-  siteAddressId?: string | null;
+  // "site:<ProjectSite id>" | "address:<PartyAddress id>" | undefined
+  siteSelection?: string | null;
   orderDate?: string;
   expectedDeliveryDate?: string | null;
-  salespersonId?: string | null;
   paymentTerms?: string | null;
   notes?: string | null;
   discountPercent?: number | null;
@@ -61,7 +62,6 @@ export function SalesOrderForm({
   action,
   clients,
   products,
-  salespeople,
   defaults,
   cancelHref,
 }: {
@@ -69,7 +69,6 @@ export function SalesOrderForm({
   action: (state: FormActionState, formData: FormData) => Promise<FormActionState>;
   clients: ClientOption[];
   products: ProductOption[];
-  salespeople: { id: string; name: string }[];
   defaults?: SalesOrderFormDefaults;
   cancelHref: string;
 }) {
@@ -122,14 +121,31 @@ export function SalesOrderForm({
               ))}
             </Select>
           </Field>
-          <Field id="siteAddressId" label="Site Address" error={fieldErrors.siteAddressId}>
-            <Select id="siteAddressId" name="siteAddressId" defaultValue={value("siteAddressId") || defaults?.siteAddressId || ""}>
+          <Field id="siteSelection" label="Site Address" error={fieldErrors.siteSelection}>
+            <Select
+              id="siteSelection"
+              name="siteSelection"
+              defaultValue={value("siteSelection") || defaults?.siteSelection || ""}
+            >
               <option value="">No specific site</option>
-              {selectedClient?.addresses.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.label ?? a.line1} {a.city ? `(${a.city})` : ""}
-                </option>
-              ))}
+              {selectedClient?.sites.length ? (
+                <optgroup label="Sites">
+                  {selectedClient.sites.map((s) => (
+                    <option key={s.id} value={`site:${s.id}`}>
+                      {s.name} {s.city ? `(${s.city})` : ""}
+                    </option>
+                  ))}
+                </optgroup>
+              ) : null}
+              {selectedClient?.addresses.length ? (
+                <optgroup label="Other addresses">
+                  {selectedClient.addresses.map((a) => (
+                    <option key={a.id} value={`address:${a.id}`}>
+                      {a.label ?? a.line1} {a.city ? `(${a.city})` : ""}
+                    </option>
+                  ))}
+                </optgroup>
+              ) : null}
             </Select>
           </Field>
         </CardContent>
@@ -140,16 +156,6 @@ export function SalesOrderForm({
           <CardTitle>Order Details</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field id="salespersonId" label="Salesperson" error={fieldErrors.salespersonId}>
-            <Select id="salespersonId" name="salespersonId" defaultValue={value("salespersonId") || defaults?.salespersonId || ""}>
-              <option value="">-</option>
-              {salespeople.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name}
-                </option>
-              ))}
-            </Select>
-          </Field>
           <Field id="orderDate" label="Order Date *" error={fieldErrors.orderDate}>
             <Input
               id="orderDate"

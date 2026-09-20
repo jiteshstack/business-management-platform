@@ -8,7 +8,7 @@ import type { ProductOption } from "@/components/shared/line-items-editor";
 export async function InvoiceCreateView() {
   const session = await requireSession();
 
-  const [clients, products, users] = await Promise.all([
+  const [clients, products] = await Promise.all([
     prisma.party.findMany({
       where: { companyId: session.companyId, type: "CLIENT", isActive: true },
       orderBy: { name: "asc" },
@@ -18,11 +18,6 @@ export async function InvoiceCreateView() {
       where: { companyId: session.companyId, isActive: true },
       orderBy: { name: "asc" },
       include: { unit: true },
-    }),
-    prisma.user.findMany({
-      where: { companyId: session.companyId, isActive: true },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
     }),
   ]);
 
@@ -52,7 +47,6 @@ export async function InvoiceCreateView() {
         action={createInvoiceAction}
         clients={clientOptions}
         products={productOptions}
-        salespeople={users}
         cancelHref="/sales/invoices"
       />
     </div>

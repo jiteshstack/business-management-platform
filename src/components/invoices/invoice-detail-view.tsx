@@ -120,7 +120,6 @@ function OverviewTab({ invoice }: { invoice: InvoiceWithRelations }) {
           <OverviewField label="Site" value={invoice.siteAddressText} />
           <OverviewField label="Invoice Date" value={invoice.invoiceDate.toLocaleDateString()} />
           <OverviewField label="Due Date" value={invoice.dueDate?.toLocaleDateString()} />
-          <OverviewField label="Salesperson" value={invoice.salesperson?.name} />
           <OverviewField label="Payment Terms" value={invoice.paymentTerms} />
           {invoice.notes ? (
             <div className="sm:col-span-2">
