@@ -675,6 +675,40 @@ certificate artwork, the earlier forensic pass just didn't check for it correctl
   the visual *style* (not just content) matched more closely, that's a separate, larger scoping
   conversation still to be had.
 
+## Post-baseline change: DG page-heading style closer to the reference's colored banners
+
+The user asked to "match the visual style more closely too," referring to the open question raised
+at the end of the certificate round above (the reference's colored section banners, italic
+taglines, etc.). Scoped this round narrowly: adopt the *generic pattern* (colored heading bands,
+italic tagline) using Shanvi's own real brand colors, without reproducing any of Kirloskar's actual
+graphics (the India service-network map, icon grids, photos) - those remain excluded per the
+standing no-third-party-marketing-content principle.
+
+- **Brand colors sourced from real artwork, not guessed**: ran a color-histogram pass over the
+  ribbon graphic in `quotation-letterhead.png` (the company's own real letterhead artwork) to find
+  its two dominant non-white colors - a teal (`#1a7564`) and an orange (`#e6833c`) - and used those
+  exact values, documented in-code as sourced from that file.
+- **New `SectionBanner` component** in `quotation-print-view.tsx`: a solid-teal heading band with
+  an orange left border and bold white text, replacing the plain black bold-text headings on
+  `DgProposal`'s annexure-style pages only (Salient Features, Investment Details, Commercial Terms,
+  Warranty Terms, Technical Details, Certificate) - not the cover letter page, which stays a plain
+  formal letter in both the reference and here, and not the Solar layout's own headings, to avoid
+  touching the already-verified Solar page design.
+  - The Certificate page's SectionBanner only shows on the free-text fallback path (no Kirloskar
+    match) - the real certificate image page has no banner, since it's Kirloskar's own already-
+    designed document.
+- **Shared, low-risk tweak**: the `LetterheadPage` header's company tagline (e.g. "Kirloskar Green
+  Dealer") is now rendered italic in the brand teal color - a pure style change to already-dynamic
+  data, applied universally (Solar and DG both use `LetterheadPage`), verified to add no layout risk
+  since it doesn't change spacing/height.
+- **Verification**: `npx tsc --noEmit`, `npm run lint`, `npm run build` all clean. Re-exported the
+  DG test quotation (still 8 pages, banners render correctly with no overflow/clipping) and the
+  On-Grid Solar quotation (still 8 pages, cover page unaffected since it has its own distinct markup
+  that doesn't go through `LetterheadPage`'s header; an interior Solar page confirmed the italic
+  tagline appears there too, with no layout disruption).
+- Still deliberately not reproduced: the reference's India service-network map, icon-grid
+  infographics, and photos - all generic Kirloskar marketing collateral, not Shanvi-specific.
+
 ## Recommended next phase
 
 There is no next development phase queued. Per the MVP freeze:

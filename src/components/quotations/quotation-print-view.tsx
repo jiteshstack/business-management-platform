@@ -94,7 +94,7 @@ function LetterheadPage({
     >
       <header className="mb-4 border-b border-slate-900 pb-2 text-xs text-slate-700">
         <p className="text-sm font-bold text-slate-900">{company?.name ?? "Company"}</p>
-        {company?.tagline ? <p>{company.tagline}</p> : null}
+        {company?.tagline ? <p className="italic" style={{ color: BRAND_TEAL }}>{company.tagline}</p> : null}
         {companyAddressLines.length > 0 ? <p>{companyAddressLines.join(", ")}</p> : null}
         <p>
           {[company?.email ? `Email: ${company.email}` : null, company?.phone ? `Cell: ${company.phone}` : null]
@@ -103,6 +103,31 @@ function LetterheadPage({
         </p>
         {company?.website ? <p>Website: {company.website}</p> : null}
       </header>
+      {children}
+    </div>
+  );
+}
+
+// The two brand colors actually used in the company's own letterhead artwork
+// (sampled directly from the ribbon graphic in quotation-letterhead.png via
+// a color-histogram pass, not guessed or copied from any third party's
+// branding) - used for a colored section-heading banner so annexure-style
+// pages read closer to the DG reference document's own colored "ANNEXURE X:"
+// heading bands, without reproducing that reference's actual Kirloskar-brand
+// graphics/colors.
+const BRAND_TEAL = "#1a7564";
+const BRAND_ORANGE = "#e6833c";
+
+// A colored heading band for a DG proposal annexure-style page (Salient
+// Features, Investment Details, Commercial Terms, Warranty, Technical
+// Details, Certificate) - not used on the cover letter page, which reads as
+// a plain formal letter in both the reference and here.
+function SectionBanner({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="mb-4 flex items-center gap-2 border-l-4 py-1.5 pl-3 text-sm font-bold uppercase tracking-wide text-white print:break-after-avoid"
+      style={{ backgroundColor: BRAND_TEAL, borderLeftColor: BRAND_ORANGE }}
+    >
       {children}
     </div>
   );
@@ -1062,7 +1087,7 @@ function DgProposal({
         <>
           <PageDivider label="Page 2" />
           <LetterheadPage company={company} companyAddressLines={companyAddressLines}>
-            <p className="mb-2 text-sm font-bold">Salient Features</p>
+            <SectionBanner>Salient Features</SectionBanner>
             <MultilineList text={config.dgFeatures} />
           </LetterheadPage>
         </>
@@ -1071,7 +1096,7 @@ function DgProposal({
       {/* PAGE 3 - Investment details */}
       <PageDivider label="Page 3" />
       <LetterheadPage company={company} companyAddressLines={companyAddressLines}>
-        <p className="mb-2 text-sm font-bold">Investment Details</p>
+        <SectionBanner>Investment Details</SectionBanner>
         <table className="w-full border-collapse text-xs">
           <thead>
             <tr className="border-b border-slate-900 text-left">
@@ -1162,7 +1187,7 @@ function DgProposal({
         <>
           <PageDivider label="Page 5" />
           <LetterheadPage company={company} companyAddressLines={companyAddressLines}>
-            <p className="mb-2 text-sm font-bold">Commercial Terms &amp; Conditions</p>
+            <SectionBanner>Commercial Terms &amp; Conditions</SectionBanner>
             {commercialClauses.length > 0 ? (
               <div className="space-y-2 text-xs">
                 {commercialClauses.map(([label, text]) => (
@@ -1186,7 +1211,7 @@ function DgProposal({
         <>
           <PageDivider label="Page 6" />
           <LetterheadPage company={company} companyAddressLines={companyAddressLines}>
-            <p className="mb-2 text-sm font-bold">Warranty Terms &amp; Conditions</p>
+            <SectionBanner>Warranty Terms &amp; Conditions</SectionBanner>
             {config.warranty ? (
               <p>
                 {config.dgManufacturer ? `${config.dgManufacturer} power` : "The"} generating sets
@@ -1210,7 +1235,7 @@ function DgProposal({
         <>
           <PageDivider label="Page 7" />
           <LetterheadPage company={company} companyAddressLines={companyAddressLines}>
-            <p className="mb-2 text-sm font-bold">Technical Details</p>
+            <SectionBanner>Technical Details</SectionBanner>
             <SpecTable
               title="DG Set Specification"
               rows={[
@@ -1269,7 +1294,7 @@ function DgProposal({
         <>
           <PageDivider label="Page 8" />
           <LetterheadPage company={company} companyAddressLines={companyAddressLines}>
-            <p className="mb-2 text-sm font-bold">Authorized Channel Partner Certificate</p>
+            <SectionBanner>Authorized Channel Partner Certificate</SectionBanner>
             <p className="whitespace-pre-wrap">{config.dgCertificateText}</p>
             {company?.gstin ? <p className="mt-4 text-xs text-slate-600">GSTIN: {company.gstin}</p> : null}
           </LetterheadPage>
