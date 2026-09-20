@@ -7,6 +7,7 @@ export const PRODUCT_PAGE_SIZE = 20;
 
 export type ProductStatusFilter = "all" | "active" | "inactive";
 export type ProductSortKey = "name_asc" | "name_desc" | "code_asc" | "updated_desc";
+export type ProductStockStatusFilter = "low" | "out" | "reserved" | "damaged";
 
 export async function getDefaultLocation(companyId: string) {
   const existing = await prisma.location.findFirst({
@@ -27,6 +28,9 @@ export type ProductListParams = {
   categoryId?: string;
   brandId?: string;
   status?: ProductStatusFilter;
+  stockTracked?: boolean;
+  serialTracked?: boolean;
+  stockStatus?: ProductStockStatusFilter;
   page?: number;
   sort?: ProductSortKey;
 };
@@ -46,7 +50,19 @@ function sortToOrderBy(sort: ProductSortKey | undefined): Prisma.ProductOrderByW
 }
 
 export async function listProducts(params: ProductListParams) {
-  const { companyId, q, type, categoryId, brandId, status = "all", page = 1, sort } = params;
+  const {
+    companyId,
+    q,
+    type,
+    categoryId,
+    brandId,
+    status = "all",
+    stockTracked,
+    serialTracked,
+    stockStatus,
+    page = 1,
+    sort,
+  } = params;
   const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
 
   const where: Prisma.ProductWhereInput = {
@@ -56,6 +72,8 @@ export async function listProducts(params: ProductListParams) {
     ...(type && type !== "all" ? { type } : {}),
     ...(categoryId ? { categoryId } : {}),
     ...(brandId ? { brandId } : {}),
+    ...(stockTracked ? { stockTracked: true } : {}),
+    ...(serialTracked ? { serialTracked: true } : {}),
     ...(q
       ? {
           OR: [
@@ -68,6 +86,49 @@ export async function listProducts(params: ProductListParams) {
   };
 
   const defaultLocation = await getDefaultLocation(companyId);
+
+  if (stockStatus) {
+    // "low"/"out"/"reserved"/"damaged" depend on comparing the product's
+    // reorderLevel against a computed available quantity (totalQty - reserved -
+    // damaged) on its balance row — not a single column Prisma can filter or
+    // sort on directly. Filter and paginate in memory instead; fine at this
+    // app's per-company product counts (same approach getInventoryDashboard
+    // already uses for its low-stock list).
+    const candidates = await prisma.product.findMany({
+      where: { ...where, stockTracked: true },
+      orderBy: sortToOrderBy(sort),
+      include: {
+        category: true,
+        brand: true,
+        unit: true,
+        balances: { where: { locationId: defaultLocation.id } },
+      },
+    });
+
+    const filtered = candidates.filter((product) => {
+      const balance = product.balances[0];
+      const totalQty = balance?.totalQty ?? 0;
+      const reservedQty = balance?.reservedQty ?? 0;
+      const damagedQty = balance?.damagedQty ?? 0;
+      const available = totalQty - reservedQty - damagedQty;
+      switch (stockStatus) {
+        case "out":
+          return totalQty <= 0;
+        case "low":
+          return totalQty > 0 && product.reorderLevel != null && available <= product.reorderLevel;
+        case "reserved":
+          return reservedQty > 0;
+        case "damaged":
+          return damagedQty > 0;
+        default:
+          return true;
+      }
+    });
+
+    const total = filtered.length;
+    const items = filtered.slice((safePage - 1) * PRODUCT_PAGE_SIZE, safePage * PRODUCT_PAGE_SIZE);
+    return { items, total, page: safePage, pageSize: PRODUCT_PAGE_SIZE };
+  }
 
   const [items, total] = await Promise.all([
     prisma.product.findMany({

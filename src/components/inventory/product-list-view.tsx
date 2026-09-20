@@ -1,7 +1,14 @@
 import Link from "next/link";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, X } from "lucide-react";
 import { requireSession } from "@/lib/auth/current-session";
-import { listProducts, listCategories, listBrands, type ProductSortKey, type ProductStatusFilter } from "@/lib/energy/inventory/queries";
+import {
+  listProducts,
+  listCategories,
+  listBrands,
+  type ProductSortKey,
+  type ProductStatusFilter,
+  type ProductStockStatusFilter,
+} from "@/lib/energy/inventory/queries";
 import { PRODUCT_TYPES, PRODUCT_TYPE_LABELS, type ProductType } from "@/lib/energy/inventory/types";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -9,6 +16,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+
+const STOCK_STATUS_LABELS: Record<ProductStockStatusFilter, string> = {
+  low: "Low stock",
+  out: "Out of stock",
+  reserved: "Has reserved units",
+  damaged: "Has damaged units",
+};
 
 function isStatusFilter(value: string | undefined): value is ProductStatusFilter {
   return value === "all" || value === "active" || value === "inactive";
@@ -18,6 +32,9 @@ function isSortKey(value: string | undefined): value is ProductSortKey {
 }
 function isProductType(value: string | undefined): value is ProductType {
   return (PRODUCT_TYPES as readonly string[]).includes(value ?? "");
+}
+function isStockStatus(value: string | undefined): value is ProductStockStatusFilter {
+  return value === "low" || value === "out" || value === "reserved" || value === "damaged";
 }
 
 export async function ProductListView({
@@ -40,6 +57,11 @@ export async function ProductListView({
     : "all";
   const categoryId = typeof params.categoryId === "string" ? params.categoryId : "";
   const brandId = typeof params.brandId === "string" ? params.brandId : "";
+  const stockTracked = params.stockTracked === "1";
+  const serialTracked = params.serialTracked === "1";
+  const stockStatus = isStockStatus(typeof params.stockStatus === "string" ? params.stockStatus : undefined)
+    ? (params.stockStatus as ProductStockStatusFilter)
+    : undefined;
   const page = Number(typeof params.page === "string" ? params.page : "1") || 1;
 
   const [{ items, total, pageSize }, categories, brands] = await Promise.all([
@@ -51,6 +73,9 @@ export async function ProductListView({
       type,
       categoryId: categoryId || undefined,
       brandId: brandId || undefined,
+      stockTracked: stockTracked || undefined,
+      serialTracked: serialTracked || undefined,
+      stockStatus,
       page,
     }),
     listCategories(session.companyId, true),
@@ -69,10 +94,31 @@ export async function ProductListView({
     if (type !== "all") qs.set("type", type);
     if (categoryId) qs.set("categoryId", categoryId);
     if (brandId) qs.set("brandId", brandId);
+    if (stockTracked) qs.set("stockTracked", "1");
+    if (serialTracked) qs.set("serialTracked", "1");
+    if (stockStatus) qs.set("stockStatus", stockStatus);
     if (targetPage > 1) qs.set("page", String(targetPage));
     const query = qs.toString();
     return query ? `/inventory/products?${query}` : "/inventory/products";
   }
+
+  const hasNoFilters =
+    !q &&
+    status === "all" &&
+    type === "all" &&
+    !categoryId &&
+    !brandId &&
+    !stockTracked &&
+    !serialTracked &&
+    !stockStatus;
+
+  const activeChipFilterLabel = stockStatus
+    ? STOCK_STATUS_LABELS[stockStatus]
+    : stockTracked
+      ? "Stock-tracked"
+      : serialTracked
+        ? "Serial-tracked"
+        : undefined;
 
   return (
     <div>
@@ -88,6 +134,21 @@ export async function ProductListView({
           </Link>
         }
       />
+
+      {activeChipFilterLabel ? (
+        <div className="mb-4 flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          <span>
+            Showing: <span className="font-medium">{activeChipFilterLabel}</span>
+          </span>
+          <Link
+            href="/inventory/products"
+            className="inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-900 hover:underline"
+          >
+            <X className="h-3.5 w-3.5" />
+            Clear
+          </Link>
+        </div>
+      ) : null}
 
       <form method="get" className="mb-4 flex flex-wrap items-end gap-3">
         <div className="min-w-[200px] flex-1">
@@ -166,14 +227,10 @@ export async function ProductListView({
 
       {items.length === 0 ? (
         <EmptyState
-          title={total === 0 && !q && status === "all" && type === "all" ? "No products yet" : "No matches"}
-          description={
-            total === 0 && !q && status === "all" && type === "all"
-              ? "Add your first product to get started."
-              : "Try a different search or filter."
-          }
+          title={hasNoFilters ? "No products yet" : "No matches"}
+          description={hasNoFilters ? "Add your first product to get started." : "Try a different search or filter."}
           action={
-            total === 0 && !q && status === "all" ? (
+            hasNoFilters ? (
               <Link href="/inventory/products/new">
                 <Button size="sm">
                   <Plus className="h-4 w-4" />

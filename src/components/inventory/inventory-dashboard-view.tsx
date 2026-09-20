@@ -13,13 +13,43 @@ export async function InventoryDashboardView() {
   const data = await getInventoryDashboard(session.companyId);
 
   const stats = [
-    { label: "Total Products", value: data.totalProducts, icon: Boxes },
-    { label: "Stock-Tracked", value: data.stockTrackedProducts, icon: Boxes },
-    { label: "Low Stock", value: data.lowStockCount, icon: AlertTriangle },
-    { label: "Out of Stock", value: data.outOfStockCount, icon: PackageX },
-    { label: "Reserved Units", value: data.totalReserved, icon: Lock },
-    { label: "Damaged Units", value: data.totalDamaged, icon: ShieldAlert },
-    { label: "Serial-Tracked", value: data.serialTrackedProducts, icon: ScanLine },
+    { label: "Total Products", value: data.totalProducts, icon: Boxes, href: "/inventory/products" },
+    {
+      label: "Stock-Tracked",
+      value: data.stockTrackedProducts,
+      icon: Boxes,
+      href: "/inventory/products?stockTracked=1",
+    },
+    {
+      label: "Low Stock",
+      value: data.lowStockCount,
+      icon: AlertTriangle,
+      href: "/inventory/products?stockStatus=low",
+    },
+    {
+      label: "Out of Stock",
+      value: data.outOfStockCount,
+      icon: PackageX,
+      href: "/inventory/products?stockStatus=out",
+    },
+    {
+      label: "Reserved Units",
+      value: data.totalReserved,
+      icon: Lock,
+      href: "/inventory/products?stockStatus=reserved",
+    },
+    {
+      label: "Damaged Units",
+      value: data.totalDamaged,
+      icon: ShieldAlert,
+      href: "/inventory/products?stockStatus=damaged",
+    },
+    {
+      label: "Serial-Tracked",
+      value: data.serialTrackedProducts,
+      icon: ScanLine,
+      href: "/inventory/serial-numbers",
+    },
   ];
 
   return (
@@ -27,18 +57,20 @@ export async function InventoryDashboardView() {
       <PageHeader title="Stock" description="Inventory overview across all products." />
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-        {stats.map(({ label, value, icon: Icon }) => (
-          <Card key={label}>
-            <CardContent className="flex items-start justify-between py-4">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-                <p className="mt-2 text-2xl font-semibold text-slate-900">{value}</p>
-              </div>
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-                <Icon className="h-4 w-4" strokeWidth={2} />
-              </div>
-            </CardContent>
-          </Card>
+        {stats.map(({ label, value, icon: Icon, href }) => (
+          <Link key={label} href={href}>
+            <Card className="transition-colors hover:border-emerald-300 hover:shadow-md">
+              <CardContent className="flex items-start justify-between py-4">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-900">{value}</p>
+                </div>
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                  <Icon className="h-4 w-4" strokeWidth={2} />
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
 
