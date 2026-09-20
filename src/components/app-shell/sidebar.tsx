@@ -113,10 +113,31 @@ export function Sidebar({
   const pathname = usePathname();
 
   function sectionForPathname(currentPathname: string): string | undefined {
-    return sections.find((section) =>
-      section.items?.some((item) => isActive(currentPathname, item.href))
+    return sections.find(
+      (section) =>
+        (section.href && isPathMatch(currentPathname, section.href)) ||
+        section.items?.some((item) => isPathMatch(currentPathname, item.href))
     )?.label;
   }
+
+  // Exactly one link is ever "active": a naive per-item prefix check would
+  // mark both "Projects" (/projects) and "Sites" (/projects/sites) active at
+  // once on a Sites page, since /projects is itself a prefix of /projects/sites.
+  // Picking the single longest (most specific) matching href across the whole
+  // sidebar avoids that ambiguity regardless of how nav sections are nested.
+  const activeHref = (() => {
+    const allHrefs = sections.flatMap((section) => [
+      ...(section.href ? [section.href] : []),
+      ...(section.items?.map((item) => item.href) ?? []),
+    ]);
+    const matches = allHrefs.filter((href) => isPathMatch(pathname, href));
+    return matches.reduce<string | undefined>(
+      (best, href) => (!best || href.length > best.length ? href : best),
+      undefined
+    );
+  })();
+
+  const activeSectionLabel = sectionForPathname(pathname);
 
   // Open sections are tracked explicitly (never derived by XOR-ing a route
   // default against a toggle — flipping both at once, e.g. by navigating to
@@ -198,7 +219,7 @@ export function Sidebar({
                   label={section.label}
                   href={section.href}
                   icon={Icon}
-                  active={isActive(pathname, section.href)}
+                  active={section.href === activeHref}
                   onNavigate={onNavigate}
                   collapsed={collapsed}
                   emphasized
@@ -208,6 +229,7 @@ export function Sidebar({
           }
 
           const sectionOpen = isSectionOpen(section);
+          const sectionActive = section.label === activeSectionLabel;
 
           return (
             <div key={section.label}>
@@ -215,21 +237,37 @@ export function Sidebar({
                 type="button"
                 onClick={() => toggleSection(section.label)}
                 aria-expanded={sectionOpen}
+                aria-current={sectionActive ? "true" : undefined}
                 className={cn(
-                  "mb-1 flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold uppercase tracking-wide text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700",
+                  "mb-1 flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold uppercase tracking-wide transition-colors hover:bg-slate-50",
+                  sectionActive ? "text-emerald-700 hover:text-emerald-800" : "text-slate-500 hover:text-slate-700",
                   collapsed ? "md:mb-2 md:border-t md:border-slate-100 md:pt-2" : ""
                 )}
               >
                 <Icon
-                  className={cn("h-3.5 w-3.5 shrink-0", collapsed ? "md:hidden" : "")}
+                  className={cn(
+                    "h-3.5 w-3.5 shrink-0",
+                    sectionActive ? "text-emerald-600" : "text-slate-400",
+                    collapsed ? "md:hidden" : ""
+                  )}
                   strokeWidth={2}
                 />
                 <span className={cn("flex-1 text-left", collapsed ? "md:hidden" : "")}>
                   {section.label}
                 </span>
+                {sectionActive ? (
+                  <span
+                    className={cn(
+                      "h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500",
+                      collapsed ? "md:hidden" : ""
+                    )}
+                    aria-hidden
+                  />
+                ) : null}
                 <ChevronRight
                   className={cn(
-                    "h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform",
+                    "h-3.5 w-3.5 shrink-0 transition-transform",
+                    sectionActive ? "text-emerald-400" : "text-slate-400",
                     sectionOpen ? "rotate-90" : "",
                     collapsed ? "md:hidden" : ""
                   )}
@@ -249,7 +287,7 @@ export function Sidebar({
                     label={item.label}
                     href={item.href}
                     icon={LEAF_ICONS[item.href]}
-                    active={isActive(pathname, item.href)}
+                    active={item.href === activeHref}
                     onNavigate={onNavigate}
                     collapsed={collapsed}
                   />
@@ -280,7 +318,7 @@ export function Sidebar({
   );
 }
 
-function isActive(pathname: string, href: string): boolean {
+function isPathMatch(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
