@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Pencil } from "lucide-react";
 import { requireSession } from "@/lib/auth/current-session";
 import { getPartyById, getPartyDocuments } from "@/lib/core/parties/queries";
+import { canManageSites } from "@/lib/core/permissions";
 import {
   isPartyDetailTabKey,
   IMPLEMENTED_TABS,
@@ -361,7 +362,9 @@ export async function PartyDetailView({
 
       {tab === "projects" && type === "CLIENT" ? <ClientProjectsTab projects={clientProjects} /> : null}
 
-      {tab === "sites" && type === "CLIENT" ? <ClientSitesTab sites={clientSites} customerId={id} /> : null}
+      {tab === "sites" && type === "CLIENT" ? (
+        <ClientSitesTab sites={clientSites} customerId={id} canManage={canManageSites(session.role)} />
+      ) : null}
 
       {tab === "equipment" && type === "CLIENT" ? <ClientEquipmentTab items={installedEquipment} /> : null}
 
@@ -839,16 +842,33 @@ function ClientProjectsTab({ projects }: { projects: Awaited<ReturnType<typeof l
   );
 }
 
-function ClientSitesTab({ sites, customerId }: { sites: Awaited<ReturnType<typeof listSitesForParty>>; customerId: string }) {
+function ClientSitesTab({
+  sites,
+  customerId,
+  canManage,
+}: {
+  sites: Awaited<ReturnType<typeof listSitesForParty>>;
+  customerId: string;
+  canManage: boolean;
+}) {
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Link href={`/projects/sites/new?customerId=${customerId}`}>
-          <Button size="sm">Add Site</Button>
-        </Link>
-      </div>
+      {canManage ? (
+        <div className="flex justify-end">
+          <Link href={`/projects/sites/new?customerId=${customerId}`}>
+            <Button size="sm">Add Site</Button>
+          </Link>
+        </div>
+      ) : null}
       {sites.length === 0 ? (
-        <EmptyState title="No sites yet" description="Add this customer's installation locations." />
+        <EmptyState
+          title="No sites yet"
+          description={
+            canManage
+              ? "Add this customer's installation locations."
+              : "This customer has no installation locations yet. Adding one needs a Project Manager or Owner/Admin."
+          }
+        />
       ) : (
         <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
           <table className="w-full min-w-[500px] text-sm">
