@@ -185,6 +185,9 @@ export function QuotationForm({
               ))}
             </Select>
           </Field>
+          <Field id="reference" label="Reference" error={fieldErrors.reference}>
+            <Input id="reference" name="reference" defaultValue={value("reference") || defaults?.reference || ""} />
+          </Field>
           <Field id="quotationDate" label="Quotation Date *" error={fieldErrors.quotationDate}>
             <Input
               id="quotationDate"
@@ -196,9 +199,6 @@ export function QuotationForm({
           </Field>
           <Field id="validUntil" label="Valid Until" error={fieldErrors.validUntil}>
             <Input id="validUntil" name="validUntil" type="date" defaultValue={value("validUntil") || defaults?.validUntil || ""} />
-          </Field>
-          <Field id="reference" label="Reference" error={fieldErrors.reference}>
-            <Input id="reference" name="reference" defaultValue={value("reference") || defaults?.reference || ""} />
           </Field>
           <Field id="subject" label="Subject / Title" error={fieldErrors.subject}>
             <Input id="subject" name="subject" defaultValue={value("subject") || defaults?.subject || ""} />
