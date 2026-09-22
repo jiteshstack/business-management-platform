@@ -88,20 +88,24 @@ export default async function DashboardPage({
         include: { user: true },
       })
     : [];
+  const canViewFinancials = session ? canViewFinancialDashboard(session.role) : false;
+
   const quotationStats = session ? await getQuotationDashboard(session.companyId) : null;
   const salesOrderStats = session ? await getSalesOrderDashboard(session.companyId) : null;
   const invoiceStats = session ? await getInvoiceDashboard(session.companyId) : null;
-  const financeStats = session ? await getFinanceDashboard(session.companyId) : null;
+  // Receivables/Payables/Expenses are money-owed figures, not just activity
+  // counts — restricted to the same roles as Estimated Gross Profit below,
+  // rather than every logged-in user.
+  const financeStats = session && canViewFinancials ? await getFinanceDashboard(session.companyId) : null;
   const purchaseOrderStats = session ? await getPurchaseOrderDashboard(session.companyId) : null;
-  const vendorFinanceStats = session ? await getVendorFinanceDashboard(session.companyId) : null;
+  const vendorFinanceStats = session && canViewFinancials ? await getVendorFinanceDashboard(session.companyId) : null;
   const projectStats = session ? await getProjectDashboard(session.companyId) : null;
   const serviceStats = session ? await getServiceDashboardStats(session.companyId) : null;
   const amcStats = session ? await getAmcDashboardStats(session.companyId) : null;
   const warrantyStats = session ? await getWarrantyDashboardStats(session.companyId) : null;
   const maintenanceStats = session ? await getMaintenanceDashboardStats(session.companyId) : null;
-  const expenseStats = session ? await getExpenseDashboardStats(session.companyId) : null;
+  const expenseStats = session && canViewFinancials ? await getExpenseDashboardStats(session.companyId) : null;
 
-  const canViewFinancials = session ? canViewFinancialDashboard(session.role) : false;
   const salesThisPeriod = session ? await getSalesSummary(session.companyId, range) : null;
   const businessPerformance = session && canViewFinancials
     ? {
@@ -156,6 +160,11 @@ export default async function DashboardPage({
                     <>
                       <p className="mt-2 text-2xl font-semibold text-slate-900">{projectStats.active}</p>
                       <p className="mt-1 text-xs text-slate-400">Planned, in progress, or on hold</p>
+                    </>
+                  ) : (label === "Receivables" || label === "Payables") && !canViewFinancials ? (
+                    <>
+                      <p className="mt-2 text-2xl font-semibold text-slate-300">-</p>
+                      <p className="mt-1 text-xs text-slate-400">Restricted to Owner/Admin and Accounts</p>
                     </>
                   ) : (
                     <>
