@@ -38,7 +38,6 @@ function readProjectForm(formData: FormData) {
     description: str(formData, "description"),
     startDate: str(formData, "startDate"),
     expectedCompletionDate: str(formData, "expectedCompletionDate"),
-    projectManagerId: str(formData, "projectManagerId"),
     notes: str(formData, "notes"),
   };
 }
@@ -55,7 +54,6 @@ async function createProjectCore(params: {
   description?: string;
   startDate?: Date | null;
   expectedCompletionDate?: Date | null;
-  projectManagerId?: string | null;
   notes?: string;
   scopeItems: { productId: string | null; productName: string; productCode: string | null; unitLabel: string | null; quantity: number }[];
 }) {
@@ -76,7 +74,6 @@ async function createProjectCore(params: {
         description: params.description,
         startDate: params.startDate ?? null,
         expectedCompletionDate: params.expectedCompletionDate ?? null,
-        projectManagerId: params.projectManagerId ?? null,
         notes: params.notes,
         createdBy: params.userId,
         items: {
@@ -140,7 +137,6 @@ export async function createProjectAction(
     description: values.description,
     startDate: values.startDate ? new Date(values.startDate) : null,
     expectedCompletionDate: values.expectedCompletionDate ? new Date(values.expectedCompletionDate) : null,
-    projectManagerId: values.projectManagerId,
     notes: values.notes,
     scopeItems: [],
   });
@@ -253,7 +249,6 @@ export async function updateProjectAction(
       description: values.description,
       startDate: values.startDate ? new Date(values.startDate) : null,
       expectedCompletionDate: values.expectedCompletionDate ? new Date(values.expectedCompletionDate) : null,
-      projectManagerId: values.projectManagerId ?? null,
       notes: values.notes,
     },
   });

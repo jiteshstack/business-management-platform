@@ -14,7 +14,6 @@ import { PROJECT_TYPES, PROJECT_TYPE_LABELS, PROJECT_PRIORITIES, PROJECT_PRIORIT
 const initialState: FormActionState = {};
 
 export type CustomerOption = { id: string; name: string; sites: { id: string; name: string }[] };
-export type UserOption = { id: string; name: string };
 
 type ProjectFormDefaults = {
   customerId?: string;
@@ -25,7 +24,6 @@ type ProjectFormDefaults = {
   description?: string | null;
   startDate?: string | null;
   expectedCompletionDate?: string | null;
-  projectManagerId?: string | null;
   notes?: string | null;
 };
 
@@ -53,7 +51,6 @@ export function ProjectForm({
   mode,
   action,
   customers,
-  users,
   defaults,
   cancelHref,
   lockCustomer,
@@ -61,7 +58,6 @@ export function ProjectForm({
   mode: "create" | "edit";
   action: (state: FormActionState, formData: FormData) => Promise<FormActionState>;
   customers: CustomerOption[];
-  users: UserOption[];
   defaults?: ProjectFormDefaults;
   cancelHref: string;
   lockCustomer?: boolean;
@@ -129,25 +125,6 @@ export function ProjectForm({
               ))}
             </Select>
           </Field>
-          <Field id="priority" label="Priority" error={fieldErrors.priority}>
-            <Select id="priority" name="priority" defaultValue={value("priority") || defaults?.priority || "NORMAL"}>
-              {PROJECT_PRIORITIES.map((p) => (
-                <option key={p} value={p}>
-                  {PROJECT_PRIORITY_LABELS[p]}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <Field id="projectManagerId" label="Project Manager" error={fieldErrors.projectManagerId}>
-            <Select id="projectManagerId" name="projectManagerId" defaultValue={value("projectManagerId") || defaults?.projectManagerId || ""}>
-              <option value="">-</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name}
-                </option>
-              ))}
-            </Select>
-          </Field>
           <Field id="startDate" label="Start Date" error={fieldErrors.startDate}>
             <Input id="startDate" name="startDate" type="date" defaultValue={value("startDate") || defaults?.startDate || ""} />
           </Field>
@@ -158,6 +135,15 @@ export function ProjectForm({
               type="date"
               defaultValue={value("expectedCompletionDate") || defaults?.expectedCompletionDate || ""}
             />
+          </Field>
+          <Field id="priority" label="Priority" error={fieldErrors.priority}>
+            <Select id="priority" name="priority" defaultValue={value("priority") || defaults?.priority || "NORMAL"}>
+              {PROJECT_PRIORITIES.map((p) => (
+                <option key={p} value={p}>
+                  {PROJECT_PRIORITY_LABELS[p]}
+                </option>
+              ))}
+            </Select>
           </Field>
           <div className="sm:col-span-2">
             <Field id="description" label="Description" error={fieldErrors.description}>

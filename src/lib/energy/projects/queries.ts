@@ -11,14 +11,13 @@ export type ProjectListParams = {
   customerId?: string;
   type?: ProjectType | "all";
   status?: ProjectStatus | "all";
-  projectManagerId?: string;
   dateFrom?: string;
   dateTo?: string;
   page?: number;
 };
 
 export async function listProjects(params: ProjectListParams) {
-  const { companyId, q, customerId, type, status, projectManagerId, dateFrom, dateTo, page = 1 } = params;
+  const { companyId, q, customerId, type, status, dateFrom, dateTo, page = 1 } = params;
   const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
 
   const where: Prisma.EnergyProjectWhereInput = {
@@ -26,7 +25,6 @@ export async function listProjects(params: ProjectListParams) {
     ...(customerId ? { customerId } : {}),
     ...(type && type !== "all" ? { type } : {}),
     ...(status && status !== "all" ? { status } : {}),
-    ...(projectManagerId ? { projectManagerId } : {}),
     ...(dateFrom || dateTo
       ? {
           startDate: {
@@ -52,7 +50,7 @@ export async function listProjects(params: ProjectListParams) {
       orderBy: { createdAt: "desc" },
       skip: (safePage - 1) * PROJECT_PAGE_SIZE,
       take: PROJECT_PAGE_SIZE,
-      include: { customer: true, site: true, projectManager: true },
+      include: { customer: true, site: true },
     }),
     prisma.energyProject.count({ where }),
   ]);
@@ -67,7 +65,6 @@ export async function getProjectById(params: { companyId: string; id: string }) 
     include: {
       customer: true,
       site: true,
-      projectManager: true,
       salesOrder: true,
       items: { orderBy: { sortOrder: "asc" }, include: { product: true } },
       milestones: { orderBy: { sortOrder: "asc" } },

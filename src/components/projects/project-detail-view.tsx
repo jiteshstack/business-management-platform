@@ -180,7 +180,6 @@ function OverviewTab({
             <Field label="Site" value={project.site?.name} />
             <Field label="Project Type" value={PROJECT_TYPE_LABELS[project.type as ProjectType] ?? project.type} />
             <Field label="Priority" value={project.priority} />
-            <Field label="Project Manager" value={project.projectManager?.name} />
             <Field
               label="Source Sales Order"
               value={

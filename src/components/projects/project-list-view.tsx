@@ -132,7 +132,6 @@ export async function ProjectListView({
                 <th className="px-4 py-2.5">Customer</th>
                 <th className="px-4 py-2.5">Site</th>
                 <th className="px-4 py-2.5">Type</th>
-                <th className="px-4 py-2.5">Manager</th>
                 <th className="px-4 py-2.5">Expected Completion</th>
                 <th className="px-4 py-2.5">Status</th>
               </tr>
@@ -149,7 +148,6 @@ export async function ProjectListView({
                   <td className="px-4 py-2.5 text-slate-700">{p.customer.name}</td>
                   <td className="px-4 py-2.5 text-slate-600">{p.site?.name ?? "-"}</td>
                   <td className="px-4 py-2.5 text-slate-600">{PROJECT_TYPE_LABELS[p.type as ProjectType] ?? p.type}</td>
-                  <td className="px-4 py-2.5 text-slate-600">{p.projectManager?.name ?? "-"}</td>
                   <td className="px-4 py-2.5 whitespace-nowrap text-slate-500">
                     {p.expectedCompletionDate ? p.expectedCompletionDate.toLocaleDateString() : "-"}
                   </td>

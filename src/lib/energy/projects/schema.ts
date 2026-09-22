@@ -12,7 +12,6 @@ export const projectFormSchema = z.object({
   description: optionalTrimmed,
   startDate: optionalDate,
   expectedCompletionDate: optionalDate,
-  projectManagerId: optionalTrimmed,
   notes: optionalTrimmed,
 });
 
