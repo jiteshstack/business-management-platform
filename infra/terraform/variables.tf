@@ -61,27 +61,8 @@ variable "db_deletion_protection" {
 }
 
 # ---- App hosting ----
-
-variable "github_repository_url" {
-  description = "HTTPS URL of the GitHub repo Amplify builds from."
-  type        = string
-  default     = "https://github.com/jiteshstack/business-management-platform"
-}
-
-variable "github_branch" {
-  description = "Branch Amplify deploys."
-  type        = string
-  default     = "main"
-}
-
-variable "github_access_token" {
-  description = <<-EOT
-    GitHub personal access token with repo access, used by Amplify to clone
-    and to register a webhook. Passed in at apply time (never committed) via
-    TF_VAR_github_access_token. Leave empty to create the Amplify app without
-    a repository connection and wire the repo up in the console instead.
-  EOT
-  type        = string
-  default     = ""
-  sensitive   = true
-}
+#
+# No github_* variables here: AWS retired API-based (personal access token)
+# repository connections for new Amplify apps - only the console's "Connect
+# branch" wizard (GitHub App OAuth) can do it now. See amplify.tf and
+# infra/README.md.

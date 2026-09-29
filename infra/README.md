@@ -15,19 +15,45 @@ Terraform stack for running this app on AWS:
 cd infra/terraform
 cp terraform.tfvars.example terraform.tfvars   # adjust region/name if needed
 
-export TF_VAR_github_access_token="ghp_..."    # repo-scoped PAT, not committed
-
 terraform init
 terraform plan -out=tfplan                     # review before applying
 terraform apply tfplan
 ```
 
 `terraform apply` creates the database, so the first run takes ~10 minutes.
-When it finishes, `terraform output app_url` gives the live URL.
+When it finishes, `terraform output app_url` gives the app's URL — though it
+won't serve the real app yet until the repo is connected (next step).
 
-Amplify builds on every push to `main` once the GitHub token is supplied.
-The build runs `prisma migrate deploy`, so committed migrations are applied
-automatically as part of each deploy.
+### Connecting the GitHub repository
+
+**This has to be done by hand, in the console — it cannot be scripted.**
+AWS retired API-based (personal access token) repository connections for new
+Amplify apps; only the console's OAuth handshake with the "AWS Amplify"
+GitHub App can create one now. A `terraform apply` that tries to set
+`repository`/`access_token` directly fails with `BadRequestException: You
+should at least provide one valid token`, regardless of the token's scopes —
+confirmed live, not a guess.
+
+1. AWS Console → Amplify → open the app (`terraform output amplify_app_id`)
+2. It should show a "Connect a repository" / "Get started" prompt — if it
+   instead insists a branch already exists, delete that branch first
+   (`aws amplify list-branches` / delete in console); a branch created
+   without a repository blocks the connection wizard with the same error.
+3. Choose GitHub → authorize the "AWS Amplify" GitHub App for this repo →
+   select `jiteshstack/business-management-platform`, branch `main`
+4. It builds automatically from here on, on every push to `main`. The build
+   runs `prisma migrate deploy`, so committed migrations apply automatically
+   as part of each deploy.
+
+Once connected, bring the branch under Terraform so future plans don't
+conflict with it:
+
+```bash
+terraform import aws_amplify_branch.main <amplify_app_id>/main
+```
+
+(You'll need to re-add an `aws_amplify_branch.main` resource block to
+`amplify.tf` first — see the comment left in its place.)
 
 ## Creating the first admin user
 

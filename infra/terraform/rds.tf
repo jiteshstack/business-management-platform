@@ -19,6 +19,10 @@ resource "aws_db_parameter_group" "main" {
   parameter {
     name  = "rds.force_ssl"
     value = "1"
+    # A static parameter - Postgres only picks it up after a reboot, so AWS
+    # always reports it back this way regardless of what's requested here.
+    # Declaring it explicitly stops every `plan` from showing a no-op diff.
+    apply_method = "pending-reboot"
   }
 
   lifecycle {

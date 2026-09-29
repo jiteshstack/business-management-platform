@@ -1,6 +1,6 @@
 output "app_url" {
-  description = "Default Amplify URL for the deployed branch."
-  value       = "https://${aws_amplify_branch.main.branch_name}.${aws_amplify_app.main.default_domain}"
+  description = "Default Amplify URL once a branch is connected (see infra/README.md) - this is just its shape, e.g. https://main.<default_domain>."
+  value       = "https://main.${aws_amplify_app.main.default_domain}"
 }
 
 output "amplify_app_id" {

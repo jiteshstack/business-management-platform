@@ -61,13 +61,16 @@ resource "aws_iam_role_policy" "amplify_compute" {
 }
 
 resource "aws_amplify_app" "main" {
-  name       = "${var.project_name}-${var.environment}"
-  repository = var.github_access_token != "" ? var.github_repository_url : null
+  name = "${var.project_name}-${var.environment}"
 
-  # Only set when a token is supplied; otherwise the repo is connected in the
-  # console and this must stay unset so Terraform does not clear it.
-  access_token = var.github_access_token != "" ? var.github_access_token : null
-
+  # AWS retired API-based (personal access token) repository connections for
+  # NEW Amplify apps - it now requires the GitHub App OAuth handshake, which
+  # only happens through the console's "Connect branch" wizard. Confirmed by
+  # a live 400 (BadRequestException: "You should at least provide one valid
+  # token") from both a `repo`-scoped and a `repo`+`admin:repo_hook`-scoped
+  # classic PAT. So: connect the repo once, by hand, in the console - see
+  # infra/README.md - and `repository` is left unmanaged here so a later
+  # `terraform apply` never tries to null it back out.
   platform             = "WEB_COMPUTE"
   iam_service_role_arn = aws_iam_role.amplify_compute.arn
 
@@ -107,16 +110,15 @@ resource "aws_amplify_app" "main" {
   }
 
   lifecycle {
-    ignore_changes = [access_token]
+    ignore_changes = [repository, access_token]
   }
 }
 
-resource "aws_amplify_branch" "main" {
-  app_id      = aws_amplify_app.main.id
-  branch_name = var.github_branch
-
-  framework = "Next.js - SSR"
-  stage     = var.environment == "prod" ? "PRODUCTION" : "DEVELOPMENT"
-
-  enable_auto_build = var.github_access_token != ""
-}
+# No aws_amplify_branch resource here on purpose: connecting a repository in
+# the console creates the "main" branch itself as part of that flow, and a
+# branch Terraform created first (with no repository attached - a "manually
+# deployed" branch) blocks that same console connection with "Cannot connect
+# your app to repository while manually deployed branch still exists." Once
+# connected by hand, bring the branch under management with:
+#   terraform import aws_amplify_branch.main <app_id>/<branch_name>
+# and un-comment a resource block for it at that point.
