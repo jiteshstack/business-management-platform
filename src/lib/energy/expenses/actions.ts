@@ -7,7 +7,7 @@ import { requireSession } from "@/lib/auth/current-session";
 import { recordAudit } from "@/lib/core/audit";
 import { nextDocumentNumber } from "@/lib/core/numbering";
 import { canManageExpenses, canApproveExpenses, canCancelExpenses } from "@/lib/core/permissions";
-import { saveUploadedFile, deleteStoredFile, UploadRejectedError } from "@/lib/core/storage/local-disk";
+import { saveUploadedFile, deleteStoredFile, UploadRejectedError } from "@/lib/core/storage";
 import { type FormActionState, firstFieldErrors, rawValues, nextAttempt, str } from "@/lib/core/form-state";
 import { round2 } from "@/lib/energy/shared/pricing";
 import { expenseFormSchema, recordExpensePaymentFormSchema, expenseCategoryFormSchema } from "./schema";

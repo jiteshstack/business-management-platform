@@ -9,7 +9,7 @@ import {
   saveUploadedFile,
   deleteStoredFile,
   UploadRejectedError,
-} from "@/lib/core/storage/local-disk";
+} from "@/lib/core/storage";
 import {
   partyFormSchema,
   contactFormSchema,

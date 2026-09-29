@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/client";
 import { getSession } from "@/lib/auth/current-session";
-import { readStoredFile } from "@/lib/core/storage/local-disk";
+import { readStoredFile } from "@/lib/core/storage";
 
 export async function GET(
   _request: Request,

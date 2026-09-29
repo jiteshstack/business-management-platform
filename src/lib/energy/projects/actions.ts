@@ -17,7 +17,7 @@ import {
 import { projectFormSchema } from "./schema";
 import { PROJECT_STATUS_TRANSITIONS, DEFAULT_MILESTONES, type ProjectStatus } from "./types";
 import { assertProjectCompletable, recomputeSerialProjectItemCounters, ProjectRuleError } from "./ledger";
-import { saveUploadedFile, deleteStoredFile, UploadRejectedError } from "@/lib/core/storage/local-disk";
+import { saveUploadedFile, deleteStoredFile, UploadRejectedError } from "@/lib/core/storage";
 
 const PROJECTS_PATH = "/projects";
 
