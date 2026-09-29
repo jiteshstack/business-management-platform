@@ -1,0 +1,14 @@
+# Copy to terraform.tfvars and adjust. terraform.tfvars is git-ignored.
+# Every value below has a default in variables.tf - override only what you need.
+
+aws_region   = "ap-south-1"
+project_name = "shanvi-bmp"
+environment  = "prod"
+
+# github_repository_url = "https://github.com/jiteshstack/business-management-platform"
+# github_branch         = "main"
+
+# Do NOT put the GitHub token here. Pass it at apply time so it never lands
+# in a file:
+#   export TF_VAR_github_access_token="ghp_..."
+#   terraform apply

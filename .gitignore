@@ -53,6 +53,19 @@ logs/
 # uploaded documents (local disk storage)
 /storage/
 
+# terraform -- state holds the generated DB password and session secret in
+# plaintext, so it must never be committed. .terraform.lock.hcl is NOT
+# ignored on purpose: it pins provider versions and belongs in git.
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+crash.*.log
+tfplan
+*.tfplan
+
 # vercel
 .vercel
 
