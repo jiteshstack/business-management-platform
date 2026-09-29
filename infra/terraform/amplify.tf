@@ -74,6 +74,13 @@ resource "aws_amplify_app" "main" {
   platform             = "WEB_COMPUTE"
   iam_service_role_arn = aws_iam_role.amplify_compute.arn
 
+  # Distinct from iam_service_role_arn (the BUILD role): this is what the
+  # deployed SSR runtime itself assumes. Without it, the running compute
+  # never received DATABASE_URL/SESSION_SECRET/S3_BUCKET_NAME at all, even
+  # though they were correctly set on both the app and the branch and were
+  # correctly visible during the build - confirmed live, three redeploys in.
+  compute_role_arn = aws_iam_role.amplify_compute.arn
+
   # `prisma migrate deploy` is the non-interactive, production-safe variant -
   # it applies already-committed migrations and never generates or resets.
   build_spec = <<-YAML

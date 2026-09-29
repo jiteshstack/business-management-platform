@@ -82,6 +82,29 @@ aws secretsmanager get-secret-value \
   --query SecretString --output text
 ```
 
+## Environment variables don't reach the SSR runtime — by design, work around it
+
+**Confirmed live, not a guess:** `DATABASE_URL`/`SESSION_SECRET`/`S3_BUCKET_NAME`
+were correctly set on both the Amplify app and the branch, and were correctly
+visible during the build (`prisma migrate deploy` ran successfully) — but a
+diagnostic dump of `process.env` from the actual deployed compute, at request
+time, showed neither present; only Lambda/AWS's own infrastructure variables
+were. Neither `iam_service_role_arn` nor `compute_role_arn` changed this.
+
+The app works around this itself, so no further action is needed for a fresh
+deploy of this repo: `src/instrumentation.ts` fetches `DATABASE_URL` and
+`SESSION_SECRET` from Secrets Manager at server startup (Next.js's
+[`register()`](https://nextjs.org/docs/app/api-reference/file-conventions/instrumentation)
+hook, awaited before the server handles its first request) whenever they
+aren't already in `process.env`, and `src/lib/core/storage/index.ts` falls
+back to a hardcoded bucket name when running on Lambda
+(`AWS_LAMBDA_FUNCTION_NAME` is set) with `S3_BUCKET_NAME` missing. Both
+fallbacks hardcode this stack's actual ARN/bucket name as literals — safe,
+since neither is sensitive on its own; access is controlled by the compute
+role's IAM policy (scoped to only that one secret ARN and only that bucket),
+not by keeping the identifier secret. Redeploying this Terraform stack to a
+different AWS account/region needs those two literals updated to match.
+
 ## Things worth knowing
 
 **The database has a public endpoint.** Amplify's SSR compute runs outside

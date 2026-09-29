@@ -63,7 +63,7 @@ logs/
 !*.tfvars.example
 crash.log
 crash.*.log
-tfplan
+tfplan*
 *.tfplan
 
 # vercel
