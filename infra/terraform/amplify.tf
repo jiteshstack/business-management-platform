@@ -98,8 +98,11 @@ resource "aws_amplify_app" "main" {
   environment_variables = {
     DATABASE_URL   = jsondecode(aws_secretsmanager_secret_version.app.secret_string)["DATABASE_URL"]
     SESSION_SECRET = jsondecode(aws_secretsmanager_secret_version.app.secret_string)["SESSION_SECRET"]
-    AWS_S3_BUCKET  = aws_s3_bucket.documents.bucket
-    # AWS_REGION is reserved by the Amplify runtime and set automatically.
+    # Amplify rejects any env var name starting with the reserved "AWS"
+    # prefix, so the bucket name is passed as S3_BUCKET_NAME instead of
+    # AWS_S3_BUCKET - see src/lib/core/storage/s3.ts and index.ts.
+    # AWS_REGION itself is reserved by the Amplify runtime and set automatically.
+    S3_BUCKET_NAME = aws_s3_bucket.documents.bucket
     NODE_OPTIONS = "--max-old-space-size=4096"
   }
 

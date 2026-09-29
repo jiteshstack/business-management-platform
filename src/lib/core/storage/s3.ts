@@ -12,8 +12,10 @@ export type { StoredFile } from "./shared";
 const client = new S3Client({ region: process.env.AWS_REGION || "us-east-1" });
 
 function requireBucket(): string {
-  const bucket = process.env.AWS_S3_BUCKET;
-  if (!bucket) throw new Error("AWS_S3_BUCKET is not configured.");
+  // Named S3_BUCKET_NAME, not AWS_S3_BUCKET: Amplify rejects any env var
+  // whose name starts with the reserved "AWS" prefix.
+  const bucket = process.env.S3_BUCKET_NAME;
+  if (!bucket) throw new Error("S3_BUCKET_NAME is not configured.");
   return bucket;
 }
 
