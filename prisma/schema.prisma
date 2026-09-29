@@ -7,14 +7,15 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// SQLite has no native enum type, so role/businessType are plain strings
-// constrained at the application layer (see src/lib/core/roles.ts and
-// src/lib/core/business-type.ts). This also keeps the column free-form
-// enough to add a future vertical without a schema migration.
+// role/businessType are plain strings constrained at the application layer
+// (see src/lib/core/roles.ts and src/lib/core/business-type.ts) rather than
+// native Postgres enums - this schema originated on SQLite (no enum type
+// there) and keeping strings here too keeps the column free-form enough to
+// add a future vertical without a schema migration.
 
 model Company {
   id                    String   @id @default(cuid())
