@@ -83,9 +83,12 @@ async function ProjectProfitabilityTable({ companyId, params }: { companyId: str
   return (
     <div>
       <div className="mb-3 flex justify-end">
-        <Link href="/api/reports/export?type=project-profitability" className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700 hover:underline">
+        {/* Plain <a>, not <Link>: this triggers a file download from a route
+        handler, not a page navigation - Link would prefetch it as if it
+        were a page, spamming the route with bad requests. */}
+        <a href="/api/reports/export?type=project-profitability" className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700 hover:underline">
           <Download className="h-4 w-4" /> Export CSV
-        </Link>
+        </a>
       </div>
       <form method="get" className="mb-4 flex flex-wrap items-end gap-3">
         <input type="hidden" name="tab" value="project" />

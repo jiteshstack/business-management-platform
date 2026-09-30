@@ -43,10 +43,13 @@ export async function PayablesView({
       <PageHeader
         title="Vendor Payables"
         description="How much Shanvi Enterprises owes its vendors."
+        // Plain <a>, not <Link>: this triggers a file download from a route
+        // handler, not a page navigation - Link would prefetch it as if it
+        // were a page, spamming the route with bad requests.
         actions={
-          <Link href="/api/reports/export?type=payables" className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700 hover:underline">
+          <a href="/api/reports/export?type=payables" className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700 hover:underline">
             <Download className="h-4 w-4" /> Export CSV
-          </Link>
+          </a>
         }
       />
 

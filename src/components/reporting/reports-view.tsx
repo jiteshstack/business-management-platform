@@ -101,9 +101,12 @@ function ExportLink({ type, period, from, to }: { type: string; period: string; 
   if (from) qs.set("from", from);
   if (to) qs.set("to", to);
   return (
-    <Link href={`/api/reports/export?${qs.toString()}`} className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 hover:underline">
+    // Plain <a>, not <Link>: this triggers a file download from a route
+    // handler, not a page navigation - Link would prefetch it as if it were
+    // a page, spamming the route with bad requests.
+    <a href={`/api/reports/export?${qs.toString()}`} className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 hover:underline">
       <Download className="h-3 w-3" /> Export CSV
-    </Link>
+    </a>
   );
 }
 
