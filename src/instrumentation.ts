@@ -1,5 +1,31 @@
-// Fetches DATABASE_URL/SESSION_SECRET from Secrets Manager at server
-// startup, on AWS, when they aren't already present in process.env.
+// Two independent AWS-Amplify-specific fixups, both applied here because
+// Next.js calls and awaits register() once, before the server handles its
+// first request.
+export async function register() {
+  if (process.env.NEXT_RUNTIME !== "nodejs") return;
+  if (process.env.AWS_LAMBDA_FUNCTION_NAME) fixSelfFetchOrigin();
+  await loadSecretsFromSecretsManager();
+}
+
+// After a Server Action calls redirect(), Next.js makes an internal fetch
+// back to itself to resolve the target page's RSC payload (see
+// node_modules/next/dist/server/app-render/action-handler.js, around
+// "failed to get redirect response") - and by default it GUESSES that
+// request's origin/protocol from the incoming request's own headers rather
+// than using a fixed one. Behind Amplify's CloudFront-in-front-of-origin
+// setup this guess is unreliable: confirmed live, a real login attempt
+// intermittently (multiple times, roughly one in three) logged "failed to
+// get redirect response ... ERR_SSL_WRONG_VERSION_NUMBER" and silently
+// stayed on the login page instead of reaching the dashboard, while an
+// identical request moments later (or on the same warm instance) succeeded.
+// __NEXT_PRIVATE_ORIGIN is Next.js's own documented override for exactly
+// this - it forces a fixed origin instead of guessing one per-request.
+function fixSelfFetchOrigin() {
+  process.env.__NEXT_PRIVATE_ORIGIN ??= "https://main.d1wriqypmz52kq.amplifyapp.com";
+}
+
+// Fetches DATABASE_URL/SESSION_SECRET from Secrets Manager, on AWS, when
+// they aren't already present in process.env.
 //
 // This exists because AWS Amplify Hosting's WEB_COMPUTE (SSR) runtime does
 // not expose custom app/branch "Environment Variables" to the deployed
@@ -7,10 +33,8 @@
 // were correctly set at both the app and branch level, correctly visible
 // during the build (prisma migrate deploy succeeded), yet a diagnostic dump
 // of process.env at runtime showed neither present (only Lambda/AWS's own
-// infrastructure variables were). This is the officially documented hook
-// for exactly this situation - Next.js calls and awaits `register()` once,
-// before the server handles its first request - so it sidesteps the issue
-// entirely rather than depending on Amplify's env var propagation at all.
+// infrastructure variables were). register() sidesteps the issue entirely
+// rather than depending on Amplify's env var propagation at all.
 //
 // Locally, and on any host where these ARE already set, this does nothing.
 //
@@ -22,8 +46,7 @@
 // from any providers"), yet those same credentials were confirmed present
 // moments later during actual request handling - hence the short retry loop
 // below, rather than abandoning this hook for a request-time one.
-export async function register() {
-  if (process.env.NEXT_RUNTIME !== "nodejs") return;
+async function loadSecretsFromSecretsManager() {
   if (process.env.DATABASE_URL && process.env.SESSION_SECRET) return;
 
   // The secret's ARN is not sensitive (it's an address, not a credential) -
