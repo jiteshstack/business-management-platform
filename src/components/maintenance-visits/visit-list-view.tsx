@@ -75,7 +75,7 @@ async function ScheduleTable({ companyId }: { companyId: string }) {
           {rows.map((v) => (
             <tr key={v.id} className={v.isOverdue ? "bg-red-50/50" : undefined}>
               <td className="px-4 py-2.5">
-                <Link href={`/service/maintenance/${v.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">{v.visitNumber}</Link>
+                <Link href={`/service/maintenance/${v.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">{v.visitNumber}</Link>
               </td>
               <td className="px-4 py-2.5 text-slate-700">{v.customer.name}</td>
               <td className="px-4 py-2.5 text-slate-600">{v.site?.name ?? "-"}</td>
@@ -150,7 +150,7 @@ async function AllVisitsTable({ companyId, params }: { companyId: string; params
               {items.map((v) => (
                 <tr key={v.id} className="hover:bg-slate-50">
                   <td className="px-4 py-2.5">
-                    <Link href={`/service/maintenance/${v.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">{v.visitNumber}</Link>
+                    <Link href={`/service/maintenance/${v.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">{v.visitNumber}</Link>
                   </td>
                   <td className="px-4 py-2.5 text-slate-700">{v.customer.name}</td>
                   <td className="px-4 py-2.5 text-slate-600">{v.visitDate.toLocaleDateString()}</td>

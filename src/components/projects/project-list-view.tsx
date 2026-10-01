@@ -140,7 +140,7 @@ export async function ProjectListView({
               {items.map((p) => (
                 <tr key={p.id} className="hover:bg-slate-50">
                   <td className="px-4 py-2.5">
-                    <Link href={`/projects/${p.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">
+                    <Link href={`/projects/${p.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">
                       {p.projectNumber}
                     </Link>
                   </td>

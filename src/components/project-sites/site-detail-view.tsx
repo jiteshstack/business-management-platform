@@ -87,7 +87,7 @@ export async function ProjectSiteDetailView({ id }: { id: string }) {
                   {site.projects.map((p) => (
                     <tr key={p.id}>
                       <td className="px-4 py-2.5">
-                        <Link href={`/projects/${p.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">
+                        <Link href={`/projects/${p.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">
                           {p.projectNumber}
                         </Link>
                         <p className="text-xs text-slate-500">{p.name}</p>
@@ -114,7 +114,7 @@ export async function ProjectSiteDetailView({ id }: { id: string }) {
                   {site.installations.map((i) => (
                     <tr key={i.id}>
                       <td className="px-4 py-2.5">
-                        <Link href={`/projects/installations/${i.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">
+                        <Link href={`/projects/installations/${i.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">
                           {i.installationNumber}
                         </Link>
                         <p className="text-xs text-slate-500">{i.installationDate.toLocaleDateString()}</p>
@@ -142,7 +142,7 @@ export async function ProjectSiteDetailView({ id }: { id: string }) {
                 {equipment.map((e) => (
                   <tr key={e.id}>
                     <td className="px-4 py-2.5">
-                      <Link href={`/warranty/equipment/${e.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">{e.equipmentNumber}</Link>
+                      <Link href={`/warranty/equipment/${e.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">{e.equipmentNumber}</Link>
                       <p className="text-xs text-slate-500">{e.productName}</p>
                     </td>
                     <td className="px-4 py-2.5"><EquipmentStatusBadge status={e.status} /></td>
@@ -166,7 +166,7 @@ export async function ProjectSiteDetailView({ id }: { id: string }) {
                   {warranties.map((w) => (
                     <tr key={w.id}>
                       <td className="px-4 py-2.5">
-                        <Link href={`/warranty/warranties/${w.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">{w.warrantyNumber}</Link>
+                        <Link href={`/warranty/warranties/${w.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">{w.warrantyNumber}</Link>
                       </td>
                       <td className="px-4 py-2.5"><WarrantyStatusBadge warranty={w} /></td>
                     </tr>
@@ -187,7 +187,7 @@ export async function ProjectSiteDetailView({ id }: { id: string }) {
                   {amcs.map((a) => (
                     <tr key={a.id}>
                       <td className="px-4 py-2.5">
-                        <Link href={`/service/amc/${a.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">{a.amcNumber}</Link>
+                        <Link href={`/service/amc/${a.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">{a.amcNumber}</Link>
                       </td>
                       <td className="px-4 py-2.5"><AmcStatusBadge amc={a} /></td>
                     </tr>
@@ -213,7 +213,7 @@ export async function ProjectSiteDetailView({ id }: { id: string }) {
                     .map((sr) => (
                       <tr key={sr.id}>
                         <td className="px-4 py-2.5">
-                          <Link href={`/service/service-requests/${sr.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">{sr.requestNumber}</Link>
+                          <Link href={`/service/service-requests/${sr.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">{sr.requestNumber}</Link>
                           <p className="text-xs text-slate-500">{sr.issue}</p>
                         </td>
                         <td className="px-4 py-2.5"><ServiceRequestStatusBadge status={sr.status} /></td>
@@ -235,7 +235,7 @@ export async function ProjectSiteDetailView({ id }: { id: string }) {
                   {maintenanceVisits.map((v) => (
                     <tr key={v.id}>
                       <td className="px-4 py-2.5">
-                        <Link href={`/service/maintenance/${v.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">{v.visitNumber}</Link>
+                        <Link href={`/service/maintenance/${v.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">{v.visitNumber}</Link>
                         <p className="text-xs text-slate-500">{v.visitDate.toLocaleDateString()}</p>
                       </td>
                       <td className="px-4 py-2.5"><VisitStatusBadge status={v.status} /></td>
@@ -262,7 +262,7 @@ export async function ProjectSiteDetailView({ id }: { id: string }) {
                 {expenses.map((e) => (
                   <tr key={e.id}>
                     <td className="px-4 py-2.5">
-                      <Link href={`/finance/expenses/${e.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">{e.expenseNumber}</Link>
+                      <Link href={`/finance/expenses/${e.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">{e.expenseNumber}</Link>
                       <p className="text-xs text-slate-500">{e.category.name}</p>
                     </td>
                     <td className="px-4 py-2.5 text-slate-700">₹{e.grandTotal.toLocaleString("en-IN")}</td>

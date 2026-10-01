@@ -235,7 +235,7 @@ export async function PartyDetailView({
                     <td className="px-4 py-2.5">
                       <Link
                         href={`/sales/quotations/${q.id}`}
-                        className="font-medium text-slate-900 hover:text-emerald-700 hover:underline"
+                        className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline"
                       >
                         {q.quotationNumber}
                       </Link>
@@ -276,7 +276,7 @@ export async function PartyDetailView({
                     <td className="px-4 py-2.5">
                       <Link
                         href={`/sales/sales-orders/${so.id}`}
-                        className="font-medium text-slate-900 hover:text-emerald-700 hover:underline"
+                        className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline"
                       >
                         {so.soNumber}
                       </Link>
@@ -315,7 +315,7 @@ export async function PartyDetailView({
                     <td className="px-4 py-2.5">
                       <Link
                         href={`/sales/invoices/${inv.id}`}
-                        className="font-medium text-slate-900 hover:text-emerald-700 hover:underline"
+                        className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline"
                       >
                         {inv.invoiceNumber}
                       </Link>
@@ -542,7 +542,7 @@ function PaymentsTab({ payments }: { payments: Awaited<ReturnType<typeof listPay
             {payments.map((p) => (
               <tr key={p.id} className="hover:bg-slate-50">
                 <td className="px-4 py-2.5">
-                  <Link href={`/sales/payments-received/${p.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">
+                  <Link href={`/sales/payments-received/${p.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">
                     {p.paymentNumber}
                   </Link>
                 </td>
@@ -597,7 +597,7 @@ function OutstandingTab({
             {invoices.map((inv) => (
               <tr key={inv.id} className="hover:bg-slate-50">
                 <td className="px-4 py-2.5">
-                  <Link href={`/sales/invoices/${inv.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">
+                  <Link href={`/sales/invoices/${inv.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">
                     {inv.invoiceNumber}
                   </Link>
                 </td>
@@ -636,7 +636,7 @@ function VendorPurchaseOrdersTab({ purchaseOrders }: { purchaseOrders: Awaited<R
           {purchaseOrders.map((po) => (
             <tr key={po.id} className="hover:bg-slate-50">
               <td className="px-4 py-2.5">
-                <Link href={`/purchase/purchase-orders/${po.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">
+                <Link href={`/purchase/purchase-orders/${po.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">
                   {po.poNumber}
                 </Link>
               </td>
@@ -673,7 +673,7 @@ function VendorInvoicesTab({ invoices }: { invoices: Awaited<ReturnType<typeof l
           {invoices.map((inv) => (
             <tr key={inv.id} className="hover:bg-slate-50">
               <td className="px-4 py-2.5">
-                <Link href={`/purchase/vendor-invoices/${inv.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">
+                <Link href={`/purchase/vendor-invoices/${inv.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">
                   {inv.invoiceNumber}
                 </Link>
               </td>
@@ -725,7 +725,7 @@ function VendorPaymentsTab({ payments }: { payments: Awaited<ReturnType<typeof l
             {payments.map((p) => (
               <tr key={p.id} className="hover:bg-slate-50">
                 <td className="px-4 py-2.5">
-                  <Link href={`/purchase/payments-made/${p.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">
+                  <Link href={`/purchase/payments-made/${p.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">
                     {p.paymentNumber}
                   </Link>
                 </td>
@@ -780,7 +780,7 @@ function VendorOutstandingTab({
             {invoices.map((inv) => (
               <tr key={inv.id} className="hover:bg-slate-50">
                 <td className="px-4 py-2.5">
-                  <Link href={`/purchase/vendor-invoices/${inv.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">
+                  <Link href={`/purchase/vendor-invoices/${inv.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">
                     {inv.invoiceNumber}
                   </Link>
                 </td>
@@ -821,7 +821,7 @@ function ClientProjectsTab({ projects }: { projects: Awaited<ReturnType<typeof l
           {projects.map((p) => (
             <tr key={p.id} className="hover:bg-slate-50">
               <td className="px-4 py-2.5">
-                <Link href={`/projects/${p.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">
+                <Link href={`/projects/${p.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">
                   {p.projectNumber}
                 </Link>
               </td>
@@ -883,7 +883,7 @@ function ClientSitesTab({
               {sites.map((s) => (
                 <tr key={s.id} className="hover:bg-slate-50">
                   <td className="px-4 py-2.5">
-                    <Link href={`/projects/sites/${s.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">
+                    <Link href={`/projects/sites/${s.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">
                       {s.name}
                     </Link>
                   </td>
@@ -964,7 +964,7 @@ function ClientWarrantyAmcTab({
                 {warranties.map((w) => (
                   <tr key={w.id}>
                     <td className="px-4 py-2.5">
-                      <Link href={`/warranty/warranties/${w.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">{w.warrantyNumber}</Link>
+                      <Link href={`/warranty/warranties/${w.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">{w.warrantyNumber}</Link>
                       <p className="text-xs text-slate-500">{w.installedEquipment?.productName ?? "-"}</p>
                     </td>
                     <td className="px-4 py-2.5"><WarrantyStatusBadge warranty={w} /></td>
@@ -986,7 +986,7 @@ function ClientWarrantyAmcTab({
                 {amcs.map((a) => (
                   <tr key={a.id}>
                     <td className="px-4 py-2.5">
-                      <Link href={`/service/amc/${a.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">{a.amcNumber}</Link>
+                      <Link href={`/service/amc/${a.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">{a.amcNumber}</Link>
                       <p className="text-xs text-slate-500">{a.site?.name ?? "-"}</p>
                     </td>
                     <td className="px-4 py-2.5"><AmcStatusBadge amc={a} /></td>
@@ -1021,7 +1021,7 @@ function ClientServiceTab({ requests }: { requests: Awaited<ReturnType<typeof li
           {requests.map((sr) => (
             <tr key={sr.id}>
               <td className="px-4 py-2.5">
-                <Link href={`/service/service-requests/${sr.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">{sr.requestNumber}</Link>
+                <Link href={`/service/service-requests/${sr.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">{sr.requestNumber}</Link>
               </td>
               <td className="px-4 py-2.5 text-slate-700">{sr.issue}</td>
               <td className="px-4 py-2.5 text-slate-600">{sr.assignedTo?.name ?? "-"}</td>

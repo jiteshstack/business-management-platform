@@ -133,7 +133,7 @@ async function ProjectProfitabilityTable({ companyId, params }: { companyId: str
               {items.map((p) => (
                 <tr key={p.projectId} className="hover:bg-slate-50">
                   <td className="px-4 py-2.5">
-                    <Link href={`/projects/${p.projectId}?tab=profitability`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">{p.projectNumber}</Link>
+                    <Link href={`/projects/${p.projectId}?tab=profitability`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">{p.projectNumber}</Link>
                     <p className="text-xs text-slate-500">{p.name}</p>
                   </td>
                   <td className="px-4 py-2.5 text-slate-700">{p.customerName}</td>
@@ -192,7 +192,7 @@ async function CustomerProfitabilityTable({ companyId, params }: { companyId: st
               {items.map((c) => (
                 <tr key={c.customerId} className="hover:bg-slate-50">
                   <td className="px-4 py-2.5">
-                    <Link href={`/parties/clients/${c.customerId}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">{c.customerName}</Link>
+                    <Link href={`/parties/clients/${c.customerId}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">{c.customerName}</Link>
                   </td>
                   <td className="px-4 py-2.5 text-slate-600">{c.projectCount}</td>
                   <td className="px-4 py-2.5 text-slate-700">₹{c.revenue.toLocaleString("en-IN")}</td>

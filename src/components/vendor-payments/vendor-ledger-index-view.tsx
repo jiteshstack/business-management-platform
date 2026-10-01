@@ -40,7 +40,7 @@ export async function VendorLedgerIndexView() {
               {rows.map((v) => (
                 <tr key={v.id} className="hover:bg-slate-50">
                   <td className="px-4 py-2.5">
-                    <Link href={`/parties/vendors/${v.id}?tab=ledger`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">
+                    <Link href={`/parties/vendors/${v.id}?tab=ledger`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">
                       {v.name}
                     </Link>
                   </td>

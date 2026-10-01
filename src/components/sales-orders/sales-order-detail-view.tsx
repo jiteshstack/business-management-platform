@@ -170,7 +170,7 @@ async function ProjectSection({
           <ul className="divide-y divide-slate-100">
             {projects.map((p) => (
               <li key={p.id} className="flex items-center justify-between py-2 text-sm">
-                <Link href={`/projects/${p.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">
+                <Link href={`/projects/${p.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">
                   {p.projectNumber} - {p.name}
                 </Link>
                 <ProjectStatusBadge status={p.status} />
@@ -302,7 +302,7 @@ function InvoicesTab({ salesOrder }: { salesOrder: SalesOrderWithRelations }) {
           {salesOrder.invoices.map((inv) => (
             <tr key={inv.id}>
               <td className="px-4 py-2.5">
-                <Link href={`/sales/invoices/${inv.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">
+                <Link href={`/sales/invoices/${inv.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">
                   {inv.invoiceNumber}
                 </Link>
               </td>

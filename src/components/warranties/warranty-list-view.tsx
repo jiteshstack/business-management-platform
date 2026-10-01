@@ -92,7 +92,7 @@ export async function WarrantyListView({ searchParams }: { searchParams: Promise
               {items.map((w) => (
                 <tr key={w.id} className="hover:bg-slate-50">
                   <td className="px-4 py-2.5">
-                    <Link href={`/warranty/warranties/${w.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">{w.warrantyNumber}</Link>
+                    <Link href={`/warranty/warranties/${w.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">{w.warrantyNumber}</Link>
                   </td>
                   <td className="px-4 py-2.5 text-slate-700">{w.customer.name}</td>
                   <td className="px-4 py-2.5 text-slate-600">{w.installedEquipment ? w.installedEquipment.productName : "-"}</td>

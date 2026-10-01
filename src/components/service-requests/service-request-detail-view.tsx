@@ -182,7 +182,7 @@ export async function ServiceRequestDetailView({
                 {request.maintenanceVisits.map((v) => (
                   <tr key={v.id}>
                     <td className="px-4 py-2.5">
-                      <Link href={`/service/maintenance/${v.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">{v.visitNumber}</Link>
+                      <Link href={`/service/maintenance/${v.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">{v.visitNumber}</Link>
                     </td>
                     <td className="px-4 py-2.5 text-slate-600">{v.visitDate.toLocaleDateString()}</td>
                     <td className="px-4 py-2.5 text-slate-600">{v.technician?.name ?? "-"}</td>
@@ -207,7 +207,7 @@ export async function ServiceRequestDetailView({
             <Card>
               <CardContent className="flex items-center justify-between py-4">
                 <div>
-                  <Link href={`/sales/invoices/${request.invoice.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">{request.invoice.invoiceNumber}</Link>
+                  <Link href={`/sales/invoices/${request.invoice.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">{request.invoice.invoiceNumber}</Link>
                   <p className="text-sm text-slate-600">₹{request.invoice.grandTotal.toLocaleString("en-IN")} · ₹{request.invoice.outstandingAmount.toLocaleString("en-IN")} outstanding</p>
                 </div>
                 <InvoiceStatusBadge status={request.invoice.status} />

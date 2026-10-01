@@ -175,7 +175,7 @@ export async function PartyListView({
                   <td className="px-4 py-2.5">
                     <Link
                       href={`${basePath}/${party.id}`}
-                      className="font-medium text-slate-900 hover:text-emerald-700 hover:underline"
+                      className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline"
                     >
                       {party.name}
                     </Link>

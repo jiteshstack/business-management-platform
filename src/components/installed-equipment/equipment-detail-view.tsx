@@ -155,7 +155,7 @@ export async function EquipmentDetailView({
                   {equipment.warranties.map((w) => (
                     <tr key={w.id}>
                       <td className="px-4 py-2.5">
-                        <Link href={`/warranty/warranties/${w.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">{w.warrantyNumber}</Link>
+                        <Link href={`/warranty/warranties/${w.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">{w.warrantyNumber}</Link>
                       </td>
                       <td className="px-4 py-2.5 text-slate-600">{w.startDate.toLocaleDateString()} – {w.endDate.toLocaleDateString()}</td>
                       <td className="px-4 py-2.5"><WarrantyStatusBadge warranty={w} /></td>
@@ -175,7 +175,7 @@ export async function EquipmentDetailView({
               <tbody className="divide-y divide-slate-100">
                 <tr>
                   <td className="px-4 py-2.5">
-                    <Link href={`/service/amc/${activeAmc.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">{activeAmc.amcNumber}</Link>
+                    <Link href={`/service/amc/${activeAmc.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">{activeAmc.amcNumber}</Link>
                   </td>
                   <td className="px-4 py-2.5 text-slate-600">{activeAmc.startDate.toLocaleDateString()} – {activeAmc.endDate.toLocaleDateString()}</td>
                   <td className="px-4 py-2.5"><AmcStatusBadge amc={activeAmc} /></td>
@@ -214,7 +214,7 @@ export async function EquipmentDetailView({
                   {equipment.serviceRequests.map((sr) => (
                     <tr key={sr.id}>
                       <td className="px-4 py-2.5">
-                        <Link href={`/service/service-requests/${sr.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">{sr.requestNumber}</Link>
+                        <Link href={`/service/service-requests/${sr.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">{sr.requestNumber}</Link>
                       </td>
                       <td className="px-4 py-2.5 text-slate-600">{sr.requestDate.toLocaleDateString()}</td>
                       <td className="px-4 py-2.5 text-slate-700">{sr.issue}</td>
@@ -247,7 +247,7 @@ export async function EquipmentDetailView({
                 {equipment.maintenanceVisits.map((v) => (
                   <tr key={v.id}>
                     <td className="px-4 py-2.5">
-                      <Link href={`/service/maintenance/${v.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">{v.visitNumber}</Link>
+                      <Link href={`/service/maintenance/${v.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">{v.visitNumber}</Link>
                     </td>
                     <td className="px-4 py-2.5 text-slate-600">{v.visitDate.toLocaleDateString()}</td>
                     <td className="px-4 py-2.5 text-slate-600">{v.technician?.name ?? "-"}</td>

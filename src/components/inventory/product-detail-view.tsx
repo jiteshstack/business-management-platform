@@ -205,7 +205,7 @@ function VendorsTab({
           <div className="text-sm">
             <Link
               href={`/parties/vendors/${product.defaultVendor.id}`}
-              className="font-medium text-slate-900 hover:text-emerald-700 hover:underline"
+              className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline"
             >
               {product.defaultVendor.name}
             </Link>

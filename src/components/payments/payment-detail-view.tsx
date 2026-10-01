@@ -150,7 +150,7 @@ async function AllocationsTab({ payment, companyId }: { payment: PaymentWithRela
                   {payment.allocations.map((alloc) => (
                     <tr key={alloc.id}>
                       <td className="px-4 py-2.5">
-                        <Link href={`/sales/invoices/${alloc.invoiceId}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">
+                        <Link href={`/sales/invoices/${alloc.invoiceId}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">
                           {alloc.invoice.invoiceNumber}
                         </Link>
                       </td>

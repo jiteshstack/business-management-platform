@@ -202,7 +202,7 @@ async function LinkedSalesOrdersCard({ companyId, quotationId }: { companyId: st
         <ul className="divide-y divide-slate-100">
           {salesOrders.map((so) => (
             <li key={so.id} className="flex items-center justify-between py-2 text-sm">
-              <Link href={`/sales/sales-orders/${so.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">
+              <Link href={`/sales/sales-orders/${so.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">
                 {so.soNumber}
               </Link>
               <span className="text-slate-500">₹{so.grandTotal.toLocaleString("en-IN")}</span>
@@ -376,7 +376,7 @@ async function RevisionsTab({
           {revisions.map((rev) => (
             <tr key={rev.id} className={rev.id === currentId ? "bg-emerald-50/50" : undefined}>
               <td className="px-4 py-2.5">
-                <Link href={`/sales/quotations/${rev.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">
+                <Link href={`/sales/quotations/${rev.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">
                   Rev {rev.revisionNumber} {rev.isLatestRevision ? <Badge variant="success">Latest</Badge> : null}
                 </Link>
               </td>

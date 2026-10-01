@@ -82,7 +82,7 @@ export async function EquipmentListView({ searchParams }: { searchParams: Promis
               {items.map((e) => (
                 <tr key={e.id} className="hover:bg-slate-50">
                   <td className="px-4 py-2.5">
-                    <Link href={`/warranty/equipment/${e.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">
+                    <Link href={`/warranty/equipment/${e.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">
                       {e.equipmentNumber}
                     </Link>
                   </td>

@@ -93,7 +93,7 @@ export async function AmcListView({ searchParams }: { searchParams: Promise<Reco
               {items.map((a) => (
                 <tr key={a.id} className="hover:bg-slate-50">
                   <td className="px-4 py-2.5">
-                    <Link href={`/service/amc/${a.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">{a.amcNumber}</Link>
+                    <Link href={`/service/amc/${a.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">{a.amcNumber}</Link>
                   </td>
                   <td className="px-4 py-2.5 text-slate-700">{a.customer.name}</td>
                   <td className="px-4 py-2.5 text-slate-600">{a.site?.name ?? "-"}</td>

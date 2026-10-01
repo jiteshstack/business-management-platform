@@ -73,7 +73,7 @@ export function DocumentsSection({
             <li key={doc.id} className="flex items-center justify-between gap-3 px-4 py-3">
               <a
                 href={`/api/parties/documents/${doc.id}`}
-                className="flex min-w-0 items-center gap-2 text-sm font-medium text-slate-900 hover:text-emerald-700 hover:underline"
+                className="flex min-w-0 items-center gap-2 text-sm font-medium text-emerald-700 hover:text-emerald-800 hover:underline"
               >
                 <FileText className="h-4 w-4 shrink-0 text-slate-400" />
                 <span className="truncate">{doc.fileName}</span>

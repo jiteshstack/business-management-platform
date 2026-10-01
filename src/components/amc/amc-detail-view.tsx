@@ -111,7 +111,7 @@ export async function AmcDetailView({ id }: { id: string }) {
                 {amc.invoices.map((inv) => (
                   <tr key={inv.id}>
                     <td className="px-4 py-2.5">
-                      <Link href={`/sales/invoices/${inv.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">{inv.invoiceNumber}</Link>
+                      <Link href={`/sales/invoices/${inv.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">{inv.invoiceNumber}</Link>
                     </td>
                     <td className="px-4 py-2.5 text-slate-700">₹{inv.grandTotal.toLocaleString("en-IN")}</td>
                     <td className="px-4 py-2.5 text-slate-600">₹{inv.outstandingAmount.toLocaleString("en-IN")} outstanding</td>
@@ -135,7 +135,7 @@ export async function AmcDetailView({ id }: { id: string }) {
                   {amc.maintenanceVisits.map((v) => (
                     <tr key={v.id}>
                       <td className="px-4 py-2.5">
-                        <Link href={`/service/maintenance/${v.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">{v.visitNumber}</Link>
+                        <Link href={`/service/maintenance/${v.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">{v.visitNumber}</Link>
                         <p className="text-xs text-slate-500">{v.visitDate.toLocaleDateString()}</p>
                       </td>
                       <td className="px-4 py-2.5"><VisitStatusBadge status={v.status} /></td>
@@ -157,7 +157,7 @@ export async function AmcDetailView({ id }: { id: string }) {
                   {amc.serviceRequests.map((sr) => (
                     <tr key={sr.id}>
                       <td className="px-4 py-2.5">
-                        <Link href={`/service/service-requests/${sr.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">{sr.requestNumber}</Link>
+                        <Link href={`/service/service-requests/${sr.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">{sr.requestNumber}</Link>
                         <p className="text-xs text-slate-500">{sr.requestDate.toLocaleDateString()}</p>
                       </td>
                       <td className="px-4 py-2.5"><ServiceRequestStatusBadge status={sr.status} /></td>

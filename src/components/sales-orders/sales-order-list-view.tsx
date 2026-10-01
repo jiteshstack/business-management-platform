@@ -174,7 +174,7 @@ export async function SalesOrderListView({
                   <td className="px-4 py-2.5">
                     <Link
                       href={`/sales/sales-orders/${so.id}`}
-                      className="font-medium text-slate-900 hover:text-emerald-700 hover:underline"
+                      className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline"
                     >
                       {so.soNumber}
                     </Link>

@@ -254,7 +254,7 @@ async function PaymentTab({ invoice, companyId }: { invoice: InvoiceWithRelation
                     className={
                       alloc.payment.status === "CANCELLED"
                         ? "text-slate-400 line-through hover:underline"
-                        : "font-medium text-slate-900 hover:text-emerald-700 hover:underline"
+                        : "font-medium text-emerald-700 hover:text-emerald-800 hover:underline"
                     }
                   >
                     {alloc.payment.paymentNumber}

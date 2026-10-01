@@ -189,7 +189,7 @@ export async function PaymentListView({
                   <td className="px-4 py-2.5">
                     <Link
                       href={`/sales/payments-received/${p.id}`}
-                      className="font-medium text-slate-900 hover:text-emerald-700 hover:underline"
+                      className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline"
                     >
                       {p.paymentNumber}
                     </Link>

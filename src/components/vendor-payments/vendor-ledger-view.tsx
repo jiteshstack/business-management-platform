@@ -45,7 +45,7 @@ export async function VendorLedgerView({ companyId, vendorId }: { companyId: str
             <tr key={`${entry.type}-${entry.refId}-${index}`}>
               <td className="px-4 py-2.5 whitespace-nowrap text-slate-600">{entry.date.toLocaleDateString()}</td>
               <td className="px-4 py-2.5">
-                <Link href={hrefFor(entry)} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">
+                <Link href={hrefFor(entry)} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">
                   {entry.reference}
                 </Link>
               </td>

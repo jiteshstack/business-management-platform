@@ -90,7 +90,7 @@ export async function InventoryDashboardView() {
                     <li key={balance.id} className="flex items-center justify-between py-2 text-sm">
                       <Link
                         href={`/inventory/products/${balance.productId}`}
-                        className="font-medium text-slate-900 hover:text-emerald-700 hover:underline"
+                        className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline"
                       >
                         {balance.product.name}
                       </Link>
@@ -122,7 +122,7 @@ export async function InventoryDashboardView() {
                     <div className="min-w-0">
                       <Link
                         href={`/inventory/products/${movement.productId}`}
-                        className="font-medium text-slate-900 hover:text-emerald-700 hover:underline"
+                        className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline"
                       >
                         {movement.product.name}
                       </Link>

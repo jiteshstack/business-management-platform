@@ -81,7 +81,7 @@ export async function WarrantyDetailView({ id }: { id: string }) {
                 {warranty.serviceRequests.map((sr) => (
                   <tr key={sr.id}>
                     <td className="px-4 py-2.5">
-                      <Link href={`/service/service-requests/${sr.id}`} className="font-medium text-slate-900 hover:text-emerald-700 hover:underline">{sr.requestNumber}</Link>
+                      <Link href={`/service/service-requests/${sr.id}`} className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline">{sr.requestNumber}</Link>
                     </td>
                     <td className="px-4 py-2.5 text-slate-600">{sr.requestDate.toLocaleDateString()}</td>
                     <td className="px-4 py-2.5"><ServiceRequestStatusBadge status={sr.status} /></td>
