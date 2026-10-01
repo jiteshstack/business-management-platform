@@ -42,7 +42,7 @@ import {
   ChevronRight,
   type LucideIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { forwardRef, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { NavSection } from "@/lib/core/nav";
 import type { ModuleKey } from "@/lib/core/permissions";
@@ -139,6 +139,18 @@ export function Sidebar({
 
   const activeSectionLabel = sectionForPathname(pathname);
 
+  // A link clicked from page content (e.g. a customer name while viewing a
+  // Warranty) can land on a sidebar item scrolled out of view — the sidebar
+  // is a tall, independently-scrolling list, not the page itself. Bring
+  // whichever item just became active into view automatically, same as the
+  // section auto-expand above; "nearest" only scrolls if it's actually
+  // outside the visible area, so clicking a link that's already visible
+  // never causes a jump.
+  const activeItemRef = useRef<HTMLAnchorElement>(null);
+  useEffect(() => {
+    activeItemRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [activeHref]);
+
   // Open sections are tracked explicitly (never derived by XOR-ing a route
   // default against a toggle — flipping both at once, e.g. by navigating to
   // a link inside a section you just opened, would cancel out and close it).
@@ -216,6 +228,7 @@ export function Sidebar({
             return (
               <div key={section.label}>
                 <NavItem
+                  ref={section.href === activeHref ? activeItemRef : undefined}
                   label={section.label}
                   href={section.href}
                   icon={Icon}
@@ -284,6 +297,7 @@ export function Sidebar({
                 {section.items?.map((item) => (
                   <NavItem
                     key={item.href}
+                    ref={item.href === activeHref ? activeItemRef : undefined}
                     label={item.label}
                     href={item.href}
                     icon={LEAF_ICONS[item.href]}
@@ -322,25 +336,21 @@ function isPathMatch(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function NavItem({
-  label,
-  href,
-  icon: Icon,
-  active,
-  onNavigate,
-  emphasized,
-  collapsed,
-}: {
-  label: string;
-  href: string;
-  icon?: LucideIcon;
-  active: boolean;
-  onNavigate: () => void;
-  emphasized?: boolean;
-  collapsed?: boolean;
-}) {
+const NavItem = forwardRef<
+  HTMLAnchorElement,
+  {
+    label: string;
+    href: string;
+    icon?: LucideIcon;
+    active: boolean;
+    onNavigate: () => void;
+    emphasized?: boolean;
+    collapsed?: boolean;
+  }
+>(function NavItem({ label, href, icon: Icon, active, onNavigate, emphasized, collapsed }, ref) {
   return (
     <Link
+      ref={ref}
       href={href}
       onClick={onNavigate}
       title={collapsed ? label : undefined}
@@ -362,4 +372,4 @@ function NavItem({
       <span className={cn("truncate", collapsed ? "md:sr-only" : "")}>{label}</span>
     </Link>
   );
-}
+});
